@@ -1,3 +1,3 @@
-# Changelog for PreprocessorAST
+# Changelog for Masala
 
 ## Unreleased changes

@@ -14,13 +14,13 @@
             "label": "run",
             "type": "shell",
             "group": "build",
-            "command": "stack exec PreprocessorAST-exe.exe",
+            "command": "stack exec Masala-exe.exe",
             "problemMatcher": []
         },
         {
             "label": "build and run",
             "type": "shell",
-            "command": "stack install; stack exec PreprocessorAST-exe.exe",
+            "command": "stack install; stack exec Masala-exe.exe",
             "group": "build",
             "problemMatcher": []
         }
