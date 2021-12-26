@@ -1,8 +1,9 @@
 module Main where
 
-import qualified Tokeniser as Tok
+import Tokeniser (scanTokens)
 
 main :: IO ()
 main = do
     contents <- readFile "input.txt"
-    print (show $ Tok.tokenise contents)
+    let toks = scanTokens contents
+    mapM_ print toks

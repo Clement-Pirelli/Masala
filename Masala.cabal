@@ -25,7 +25,11 @@ source-repository head
 
 library
   exposed-modules:
+      PPLiteral
+      StrUtils
+      Token
       Tokeniser
+      TokenType
   other-modules:
       Paths_Masala
   hs-source-dirs:

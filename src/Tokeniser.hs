@@ -1,142 +1,42 @@
-module Tokeniser(TokenPosition, LinePosition, PPLiteral, TokenContents, Token, tokenise) where
+module Tokeniser(scanTokens) where
 
-import Data.List(foldl')
-import Data.Char(isSpace)
-import Data.Maybe (fromJust, isNothing, isJust)
+import Data.Maybe(fromJust, isNothing, isJust)
 
---todo: take these out of here
+import Token
 
-safeHead :: [a] -> Maybe a
-safeHead [] = Nothing
-safeHead (x:_) = Just x
+import StrUtils(skipToEndl, skipTabsSpaces)
 
-safeTail :: [a] -> Maybe [a]
-safeTail [] = Nothing
-safeTail (_:xs) = Just xs
+scanDirectiveBody :: String -> (Int, [Token])
+scanDirectiveBody xs = (skipToEndl xs, [])
 
+scanDirective :: Int -> String -> Maybe (Int, Token)
+scanDirective l xs = do
+    tok <- xs `atStartOf` directiveTokens
+    return (length $ fst tok, Token { tokenType = snd tok, lexeme = fst tok, literal = Nothing, line = l })
 
-indexedBy :: ((Int, a) -> Int) -> [a] -> [(Int, a)]
-indexedBy f = foldl' step []
-    where step o x | null o = [(0, x)]
-                   | otherwise = o ++ [(f (last o), x)]
-
-indexed :: [a] -> [(Int, a)]
-indexed = indexedBy step
-    where step o = 1 + fst o
-
-makeIndexedLines :: String -> [(Int, String)]
-makeIndexedLines = indexed . lines
---
-
-data LinePosition = LinePosition {
-      lineNumber :: Int
-    , lineContents :: String
-    } deriving (Show)
-
-data TokenPosition = TokenPosition {
-      linePosition :: LinePosition
-    , charNumber :: Int
-    , tokContents :: String
-    } deriving (Show)
-
-data PPLiteral = PPString String
-    | PPFloat Double
-    | PPDouble Double
-    | PPInt Int
-    deriving (Show)
-
-data UnaryOperatorType = Not | HasAttribute | HasCAttribute | HasCPPAttribute | HasBuiltin | HasInclude | Defined deriving (Show, Eq)
-data BinaryOperatorType = GreaterEqual | Greater | Equal | And | Or | IsNot | LesserEqual | Lesser deriving (Show, Eq)
-
-data TokenContents = If
-    | Elif
-    | Ifdef
-    | Else
-    | Endif
-    | Define
-    | Pragma
-    | Symbol
-    | Include
-    | UnaryOperator UnaryOperatorType
-    | BinaryOperator BinaryOperatorType
-    | Literal PPLiteral
-    | OpeningParens
-    | ClosingParens
-    | Comma
-    | Unknown
-    deriving (Show)
-
-data Token = Token {
-      tokenContents :: TokenContents
-    , tokenPosition :: TokenPosition
-    } deriving (Show)
-
-directiveTokens :: [(String, TokenContents)]
-directiveTokens = [
-        ("#include", Include),
-        ("#define", Define),
-        ("#pragma", Pragma),
-        ("#ifdef", Ifdef),
-        ("#endif", Endif),
-        ("#elif", Elif),
-        ("#else", Else),
-        ("#if", If)
-    ]
-
-bodyTokens :: [(String, TokenContents)]
-bodyTokens = [
-        ("__has_attribute", UnaryOperator HasAttribute),
-        ("__has_c_attribute", UnaryOperator HasCAttribute),
-        ("__has_cpp_attribute", UnaryOperator HasCPPAttribute),
-        ("__has_builtin", UnaryOperator HasBuiltin),
-        ("__has_include", UnaryOperator HasInclude),
-        ("defined", UnaryOperator Defined),
-        (">=", BinaryOperator GreaterEqual),
-        ("<=", BinaryOperator LesserEqual),
-        ("==", BinaryOperator Equal),
-        ("&&", BinaryOperator And),
-        ("!=", BinaryOperator IsNot),
-        ("||", BinaryOperator Or),
-        ("(", OpeningParens),
-        (")", ClosingParens),
-        (",", Comma),
-        ("!", UnaryOperator Not),
-        (">", BinaryOperator Greater),
-        ("<", BinaryOperator Lesser)
-    ]
-
-nextBodyTokenPosition :: TokenPosition -> Maybe TokenPosition
-nextBodyTokenPosition (TokenPosition line@(LinePosition lineNum contents) charNum tokStr) = 
-    if null (dropWhile isSpace newTokenStart) then Nothing else Just $ TokenPosition line (charNum + tokLength) newTokenStart
+onNoDirective :: Int -> [Char] -> [Token]
+onNoDirective l afterWhiteSpace = scanTokens' (l+1) afterLineEnd
     where
-        newPosition = TokenPosition line (charNum + tokLength) newTokenStart
-        newTokenStart = drop tokLength contents
-        tokLength = length tokStr
+        afterLineEnd = drop lineEnd afterWhiteSpace
+        lineEnd = skipToEndl afterWhiteSpace
 
-
-findBodyTokens :: Maybe TokenPosition -> [Token]
-findBodyTokens Nothing = []
-findBodyTokens (Just pos) = undefined
-
-findDirectiveToken :: TokenPosition -> Maybe Token
-findDirectiveToken (TokenPosition line charNum tokStr) = do
-    contents <- lookup tokStr directiveTokens
-    let tokLength = length tokStr
-    let newTokenStart = drop tokLength $ lineContents line
-    let newPosition = TokenPosition line (charNum + tokLength) newTokenStart
-    return $ Token contents newPosition
-
-findTokens :: LinePosition -> Maybe [Token]
-findTokens linePos@(LinePosition lineNum str) = do
-    let whitespaceSpan = span isSpace str
-    let tokenStr = snd whitespaceSpan
-    let startTokCharCount = length (fst whitespaceSpan)
-    tokStart <- (safeHead . words) tokenStr
-    let directiveTokenPosition = TokenPosition linePos startTokCharCount tokStart
-    directiveToken <- findDirectiveToken directiveTokenPosition
-    return $ directiveToken : findBodyTokens (nextBodyTokenPosition directiveTokenPosition)
-
-tokenise :: String -> [Token]
-tokenise input = undefined
+onDirectiveToken l directiveTok afterWhiteSpace = snd directiveTok : snd bodyToks ++ scanTokens' (l+1) (drop (fst bodyToks) bodyStr)
     where
-        inputLines = makeIndexedLines input
+        bodyToks = scanDirectiveBody bodyStr
+        bodyStr = drop directiveEnd afterWhiteSpace
+        directiveEnd = fst directiveTok
+
+
+scanTokens' :: Int -> String -> [Token]
+scanTokens' l [] = [Token { tokenType = TokEOF, lexeme = "", literal = Nothing, line = l }]
+--todo: make each branch its own function tbqh
+scanTokens' l xs | noDirective = onNoDirective l afterWhiteSpace
+                 | otherwise = onDirectiveToken l (fromJust directiveTok) afterWhiteSpace
+    where
+        noDirective = isNothing directiveTok
+        directiveTok = scanDirective l afterWhiteSpace
+        afterWhiteSpace = drop startWhiteSpace xs
+        startWhiteSpace = skipTabsSpaces xs
+
+scanTokens :: String -> [Token]
+scanTokens = scanTokens' 0
