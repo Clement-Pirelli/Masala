@@ -1,7 +1,7 @@
-//#include <iostream>
-//#include "myPath.h"
+#include <iostream>
+#include "myPath.h"
 
-#ifdef MY_DEFINE
+ #ifdef MY_DEFINE
 
 //stuff
 //stuff

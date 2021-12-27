@@ -10,6 +10,8 @@ data Token = Token {
     , lexeme :: String
     , literal :: Maybe PPLiteral
     , line :: Int
+    , character :: Int
+    , preceededBySpace :: Bool
     } deriving (Show)
 
 directiveTokens :: [(String, TokenType)]
@@ -34,6 +36,7 @@ bodyTokens = [
         ("&&", TokAnd),
         ("!=", TokNotEqual),
         ("||", TokOr),
+        ("##", TokHashHash),
         ("(", TokOpeningParens),
         (")", TokClosingParens),
         (",", TokComma),
@@ -45,7 +48,8 @@ bodyTokens = [
         ("+", TokPlus),
         ("-", TokMinus),
         ("*", TokStar),
-        ("^", TokXor)
+        ("^", TokXor),
+        ("#", TokHash)
     ]
 
 

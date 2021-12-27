@@ -9,34 +9,45 @@ import StrUtils(skipToEndl, skipTabsSpaces)
 scanDirectiveBody :: String -> (Int, [Token])
 scanDirectiveBody xs = (skipToEndl xs, [])
 
-scanDirective :: Int -> String -> Maybe (Int, Token)
-scanDirective l xs = do
+scanDirective :: Int -> Int -> String -> Bool -> Maybe (Int, Token)
+scanDirective l c xs spaceBefore = do
     tok <- xs `atStartOf` directiveTokens
-    return (length $ fst tok, Token { tokenType = snd tok, lexeme = fst tok, literal = Nothing, line = l })
+    let lexm = fst tok
+    let len = length lexm 
+    return (len, Token { tokenType = snd tok, lexeme = lexm, literal = Nothing, line = l, character = c, preceededBySpace = spaceBefore })
 
-onNoDirective :: Int -> [Char] -> [Token]
-onNoDirective l afterWhiteSpace = scanTokens' (l+1) afterLineEnd
+onNoDirective :: Int -> Int -> [Char] -> [Token]
+onNoDirective l c afterWhiteSpace
+    | head afterWhiteSpace == '#' = error $ "Unrecognized preprocessor directive at line " ++ show l
+    | otherwise = scanTokens' True (l+1) (c+lineEnd) afterLineEnd
     where
         afterLineEnd = drop lineEnd afterWhiteSpace
         lineEnd = skipToEndl afterWhiteSpace
 
-onDirectiveToken l directiveTok afterWhiteSpace = snd directiveTok : snd bodyToks ++ scanTokens' (l+1) (drop (fst bodyToks) bodyStr)
+onDirectiveToken :: Int -> Int -> (Int, Token) -> String -> [Token]
+onDirectiveToken l c directiveTok afterWhiteSpace = snd directiveTok : snd bodyToks ++ rest
     where
+        rest = scanTokens' False (l+1) (c+bodyLen) (drop bodyLen bodyStr)
+        bodyLen = fst bodyToks
         bodyToks = scanDirectiveBody bodyStr
         bodyStr = drop directiveEnd afterWhiteSpace
         directiveEnd = fst directiveTok
 
 
-scanTokens' :: Int -> String -> [Token]
-scanTokens' l [] = [Token { tokenType = TokEOF, lexeme = "", literal = Nothing, line = l }]
+scanTokens' :: Bool -> Int -> Int -> String -> [Token]
+
+scanTokens' spaceBefore l c [] = [Token { tokenType = TokEOF, lexeme = "", literal = Nothing, line = l, character = c, preceededBySpace = spaceBefore }]
 --todo: make each branch its own function tbqh
-scanTokens' l xs | noDirective = onNoDirective l afterWhiteSpace
-                 | otherwise = onDirectiveToken l (fromJust directiveTok) afterWhiteSpace
+scanTokens' spaceBefore l c xs
+    | noDirective = onNoDirective l (c+startWhiteSpace) afterWhiteSpace
+    | otherwise = onDirectiveToken l (c + startWhiteSpace + fst directiveTok') directiveTok' afterWhiteSpace
     where
+        directiveTok' = fromJust directiveTok
         noDirective = isNothing directiveTok
-        directiveTok = scanDirective l afterWhiteSpace
+        directiveTok = scanDirective l (c+startWhiteSpace) afterWhiteSpace beforeDirectiveIsWhiteSpace
+        beforeDirectiveIsWhiteSpace = startWhiteSpace > 0
         afterWhiteSpace = drop startWhiteSpace xs
         startWhiteSpace = skipTabsSpaces xs
 
 scanTokens :: String -> [Token]
-scanTokens = scanTokens' 0
+scanTokens = scanTokens' False 0 0
