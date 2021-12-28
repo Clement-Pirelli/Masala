@@ -4,6 +4,5 @@ import Tokeniser (scanTokens)
 
 main :: IO ()
 main = do
-    contents <- readFile "input.txt"
-    let toks = scanTokens contents
+    let toks = scanTokens "#include <AAAA.h\\\n>"
     mapM_ print toks

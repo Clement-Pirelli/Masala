@@ -13,13 +13,12 @@ data TokenType =
     --Unary operators
     | TokNot | TokPlus | TokMinus | TokStar | TokHash
     --Binary operators
-    | TokEqual | TokAnd | TokOr | TokNotEqual | TokGreaterEqual | TokLesserEqual | TokBitAnd | TokBitOr | TokXor | TokHashHash
-    | TokLiteral
-    | TokOpeningParens
-    | TokClosingParens
-    | TokOpeningChevron
-    | TokClosingChevron
+    | TokEqual | TokAnd | TokOr | TokNotEqual | TokGreaterEqual | TokLesserEqual 
+    | TokBitAnd | TokBitOr | TokXor | TokHashHash | TokSlash
+
+    | TokOpeningParens | TokClosingParens | TokOpeningChevron | TokClosingChevron | TokOpeningBrace | TokClosingBrace | TokOpeningBracket | TokClosingBracket
+    | TokDot
     | TokComma
-    | TokTrue | TokFalse
     | TokEOF
+    | TokLiteral
     deriving (Show, Eq)

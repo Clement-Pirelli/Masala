@@ -2,6 +2,7 @@ module Token(module Token, module TokenType, module PPLiteral) where
 
 import TokenType
 import PPLiteral
+import CursorPosition(CursorPosition)
 
 import Data.List(isPrefixOf, find)
 
@@ -9,10 +10,9 @@ data Token = Token {
       tokenType :: TokenType
     , lexeme :: String
     , literal :: Maybe PPLiteral
-    , line :: Int
-    , character :: Int
+    , cursor :: CursorPosition 
     , preceededBySpace :: Bool
-    } deriving (Show)
+    } deriving (Show, Eq)
 
 directiveTokens :: [(String, TokenType)]
 directiveTokens = [
@@ -28,8 +28,6 @@ directiveTokens = [
 
 bodyTokens :: [(String, TokenType)]
 bodyTokens = [
-        ("true", TokTrue),
-        ("false", TokFalse),
         (">=", TokGreaterEqual),
         ("<=", TokLesserEqual),
         ("==", TokEqual),
@@ -48,8 +46,14 @@ bodyTokens = [
         ("+", TokPlus),
         ("-", TokMinus),
         ("*", TokStar),
+        ("/", TokSlash),
         ("^", TokXor),
-        ("#", TokHash)
+        ("#", TokHash),
+        ("{", TokOpeningBrace),
+        ("}", TokClosingBrace),
+        ("[", TokOpeningBracket),
+        ("]", TokClosingBracket),
+        (".", TokDot)
     ]
 
 

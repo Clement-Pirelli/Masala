@@ -23,6 +23,12 @@
             "command": "stack install; stack exec Masala-exe.exe",
             "group": "build",
             "problemMatcher": []
+        },
+        {
+            "label": "run all tests",
+            "type": "shell",
+            "command": "stack test",
+            "group": "build",
         }
     ]
 }

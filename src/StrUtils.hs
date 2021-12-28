@@ -1,14 +1,29 @@
-module StrUtils(skipTabsSpaces, skipToEndl) where
+module StrUtils(offsetPastEndl, offsetPastTabsSpaces, pastEndl, pastTabsSpaces, startsWithEndl) where
 
-skipTabsSpaces :: String -> Int
-skipTabsSpaces [] = 0
-skipTabsSpaces (x:xs) | x == '\t' || x == ' ' = 1 + skipTabsSpaces xs
+tupFromOffsetFunc :: ([a] -> Int) -> [a] -> (Int, [a]) 
+tupFromOffsetFunc f xs = (i, drop i xs) 
+    where i = f xs
+
+offsetPastTabsSpaces :: String -> Int
+offsetPastTabsSpaces [] = 0
+offsetPastTabsSpaces (x:xs) | x == '\t' || x == ' ' = 1 + offsetPastTabsSpaces xs
                       | otherwise = 0
 
-skipToEndl :: String -> Int
-skipToEndl [] = 0
-skipToEndl (x : y : xs)
+offsetPastEndl :: String -> Int
+offsetPastEndl [] = 0
+offsetPastEndl (x : y : xs)
   | x == '\r' && y == '\n' = 2
   | x == '\n' = 1
-  | otherwise = 1 + skipToEndl (y:xs)
-skipToEndl [_] = 1
+  | otherwise = 1 + offsetPastEndl (y:xs)
+offsetPastEndl [_] = 1
+
+pastTabsSpaces :: String -> (Int, String)
+pastTabsSpaces = tupFromOffsetFunc offsetPastTabsSpaces
+
+pastEndl :: String -> (Int, String)
+pastEndl = tupFromOffsetFunc offsetPastEndl
+
+startsWithEndl :: String -> Bool
+startsWithEndl ('\r':'\n':_) = True
+startsWithEndl ('\n':_) = True
+startsWithEndl _ = False
