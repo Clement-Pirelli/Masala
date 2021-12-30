@@ -1,7 +1,8 @@
 module TokeniserSpec where
 
 import SpecHelper
-import Details.Tokeniser
+import qualified Details.Tokeniser as DTok 
+import Tokeniser
 import Token
 import CursorPosition
 import TestData.TokeniserInput
@@ -24,13 +25,9 @@ allHaveCorrectStart str = f toks
 toTypes :: [Token] -> [TokenType]
 toTypes = map tokenType
 
-directiveTokenTypes :: String -> [TokenType] 
-directiveTokenTypes input = toTypes output
-    where output = onDirectiveToken (newCursoredString input)
-
 bodyTokenTypes :: String -> [TokenType]
 bodyTokenTypes input = toTypes (snd output)
-    where output = scanDirectiveBody (newCursoredString input) False
+    where output = DTok.scanDirectiveBody (newCursoredString input) False
 
 spec :: Spec
 spec =

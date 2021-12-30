@@ -1,4 +1,11 @@
-module StrUtils(offsetPastEndl, offsetPastTabsSpaces, pastEndl, pastTabsSpaces, startsWithEndl) where
+module StrUtils(
+    offsetPastEndl,
+    offsetPastTabsSpaces,
+    pastEndl,
+    pastTabsSpaces,
+    startsWithEndl,
+    offsetPastChar,
+    pastChar) where
 
 tupFromOffsetFunc :: ([a] -> Int) -> [a] -> (Int, [a]) 
 tupFromOffsetFunc f xs = (i, drop i xs) 
@@ -27,3 +34,12 @@ startsWithEndl :: String -> Bool
 startsWithEndl ('\r':'\n':_) = True
 startsWithEndl ('\n':_) = True
 startsWithEndl _ = False
+
+offsetPastChar :: Char -> String -> Int
+offsetPastChar _ [] = 0
+offsetPastChar c (x:xs)
+  | x == c = 1
+  | otherwise = 1 + offsetPastChar c xs
+
+pastChar :: Char -> String -> (Int, String)
+pastChar c = tupFromOffsetFunc (offsetPastChar c)

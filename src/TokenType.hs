@@ -10,10 +10,11 @@ data TokenType =
     | TokPragma
     | TokSymbolName
     | TokInclude
+    | TokEquals
     --Unary operators
     | TokNot | TokPlus | TokMinus | TokStar | TokHash
     --Binary operators
-    | TokEqual | TokAnd | TokOr | TokNotEqual | TokGreaterEqual | TokLesserEqual 
+    | TokIsEqual | TokAnd | TokOr | TokNotEqual | TokGreaterEqual | TokLesserEqual 
     | TokBitAnd | TokBitOr | TokXor | TokHashHash | TokSlash
 
     | TokOpeningParens | TokClosingParens | TokOpeningChevron | TokClosingChevron | TokOpeningBrace | TokClosingBrace | TokOpeningBracket | TokClosingBracket

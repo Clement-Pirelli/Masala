@@ -27,6 +27,8 @@ library
   exposed-modules:
       CursoredString
       CursorPosition
+      Details.NumberScanner
+      Details.StringScanner
       Details.Tokeniser
       ListUtils
       PPLiteral
@@ -58,6 +60,7 @@ test-suite Masala-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      NumberScannerSpec
       SpecHelper
       TestData.TokeniserInput
       TokeniserSpec

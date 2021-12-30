@@ -30,7 +30,7 @@ bodyTokens :: [(String, TokenType)]
 bodyTokens = [
         (">=", TokGreaterEqual),
         ("<=", TokLesserEqual),
-        ("==", TokEqual),
+        ("==", TokIsEqual),
         ("&&", TokAnd),
         ("!=", TokNotEqual),
         ("||", TokOr),
@@ -53,7 +53,8 @@ bodyTokens = [
         ("}", TokClosingBrace),
         ("[", TokOpeningBracket),
         ("]", TokClosingBracket),
-        (".", TokDot)
+        (".", TokDot),
+        ("=", TokEquals)
     ]
 
 
