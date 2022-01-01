@@ -60,8 +60,10 @@ test-suite Masala-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      CursoredStringSpec
       NumberScannerSpec
       SpecHelper
+      StringScannerSpec
       TestData.TokeniserInput
       TokeniserSpec
       Paths_Masala

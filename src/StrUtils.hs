@@ -7,10 +7,6 @@ module StrUtils(
     offsetPastChar,
     pastChar) where
 
-tupFromOffsetFunc :: ([a] -> Int) -> [a] -> (Int, [a]) 
-tupFromOffsetFunc f xs = (i, drop i xs) 
-    where i = f xs
-
 offsetPastTabsSpaces :: String -> Int
 offsetPastTabsSpaces [] = 0
 offsetPastTabsSpaces (x:xs) | x == '\t' || x == ' ' = 1 + offsetPastTabsSpaces xs
@@ -43,3 +39,7 @@ offsetPastChar c (x:xs)
 
 pastChar :: Char -> String -> (Int, String)
 pastChar c = tupFromOffsetFunc (offsetPastChar c)
+
+tupFromOffsetFunc :: ([a] -> Int) -> [a] -> (Int, [a]) 
+tupFromOffsetFunc f xs = (i, drop i xs) 
+    where i = f xs

@@ -23,7 +23,8 @@ directiveTokens = [
         ("#endif", TokEndif),
         ("#elif", TokElif),
         ("#else", TokElse),
-        ("#if", TokIf)
+        ("#if", TokIf),
+        ("#undef", TokUndef)
     ]
 
 bodyTokens :: [(String, TokenType)]

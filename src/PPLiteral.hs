@@ -10,7 +10,7 @@ data PPLiteral =
     | PPChar Char
     deriving (Show, Eq)
 
-data StringType = ORDINARY | LONG | UTF8 | UTF16 | UTF32 deriving (Show, Eq)
+data StringType = StrOrdinary | StrLong | StrUTF8 | StrUTF16 | StrUTF32 deriving (Show, Eq)
 
 withStringType :: PPLiteral -> StringType -> PPLiteral
 withStringType (PPString contents _ raw) t = PPString {ppstrContents=contents, ppstrType=t, ppstrRaw=raw}

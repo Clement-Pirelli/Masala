@@ -7,6 +7,7 @@ data TokenType =
     | TokElse
     | TokEndif
     | TokDefine
+    | TokUndef
     | TokPragma
     | TokSymbolName
     | TokInclude

@@ -6,6 +6,7 @@ import Data.Char(isSpace, isNumber, isLetter)
 import CursoredString(CursoredString)
 import qualified CursoredString as CursString
 import Data.Bifunctor(second)
+import Details.StringScanner (scanString, scannableAsStringLiteral)
 
 scanTokens :: CursoredString -> Bool -> [Token]
 scanTokens cursStr spaceBefore
@@ -63,6 +64,7 @@ scanUnrecognizedToken cs spaceBefore
     | CursString.noMoreChars cs = error $ "Empty string passed to scanUnrecognizedToken at" ++ show cs ++ "! This should never happen!"
     | isNumber firstLetter = (undefined, False, return undefined) 
     | isSpace firstLetter = (CursString.incrementChars cs, True, Nothing)
+    | scannableAsStringLiteral str = let (newCS, lit) = scanString cs in (newCS, False, Just (Token TokLiteral "" (Just lit) (CursString.cursor cs) spaceBefore))
     | otherwise = (undefined, False, return undefined) --anything else is a TokSymbol  
     where
         firstLetter = head str

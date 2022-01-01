@@ -10,10 +10,7 @@ import ListUtils (safeHead)
 
 
 scannableAsNumberLiteral :: String -> Bool
---scannableAsNumberLiteral ('0':_) = True
---scannableAsNumberLiteral ('.':'e':y:_) = isBase10 y
---scannableAsNumberLiteral ('.':y:_) = isBase10 y
-scannableAsNumberLiteral _ = False
+scannableAsNumberLiteral _ = False -- todo
 
 scanNumber :: CursoredString -> (CursoredString, PPLiteral)
 scanNumber cs --also todo: refactor this into regex maybe? Or a lookup perhaps
@@ -58,7 +55,7 @@ scanFloatingPoint = undefined
 
 
 
---todo: put this in its own file?
+--todo: put this in its own file
 newtype Base = Base Int
 
 asBase :: Integer -> Base -> Integer
