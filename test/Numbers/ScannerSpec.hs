@@ -1,4 +1,4 @@
-module NumberScannerSpec where
+module Numbers.ScannerSpec where
 
 import Test.Hspec
 import CursorPosition

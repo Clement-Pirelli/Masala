@@ -79,4 +79,6 @@ scanName cs spaceBefore = if offset /= 0
         offset = pastSymbol xs
         xs = CursString.asScannableString cs
         pastSymbol [] = 0
-        pastSymbol (x:xs) = if isAlphaNum x || isMark x || isSymbol x || x == '_' then 1 + pastSymbol xs else 0
+        pastSymbol str@(x:xs) = case atStartOf str bodyTokens of
+            Nothing -> if isAlphaNum x || isMark x || isSymbol x || x == '_' then 1 + pastSymbol xs else 0
+            Just _ -> 0

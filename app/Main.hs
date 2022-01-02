@@ -3,8 +3,15 @@ module Main where
 import Tokeniser (scanTokens)
 
 
-tokeniserLongInput :: String
-tokeniserLongInput = 
+main :: IO ()
+main = do
+    let toks = scanTokens tokeniserInput
+    mapM_ print toks
+
+
+
+tokeniserInput :: String
+tokeniserInput = 
     "#include <iostream>\n" 
     ++ "#include \"myPath.h\"\n"
     ++ "\n"
@@ -40,9 +47,3 @@ tokeniserLongInput =
     ++ "//stuff\n"
     ++ "\n"
     ++ "#endif\n"
-
-
-main :: IO ()
-main = do
-    let toks = scanTokens tokeniserLongInput
-    mapM_ print toks

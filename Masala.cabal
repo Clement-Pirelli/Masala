@@ -61,9 +61,8 @@ test-suite Masala-test
   main-is: Spec.hs
   other-modules:
       CursoredStringSpec
-      NumberScannerSpec
-      StringScannerSpec
-      TestData.TokeniserInput
+      Numbers.ScannerSpec
+      Strings.ScannerSpec
       TokeniserSpec
       Paths_Masala
   hs-source-dirs:
