@@ -1,21 +1,27 @@
-module Details.StringScanner where
+module Details.Strings.Scanner where
 
-import Data.List(isPrefixOf)
+import Data.List(isPrefixOf, find)
 import CursoredString(CursoredString)
 import qualified CursoredString as CursString
 import PPLiteral
 import Data.Bifunctor (second)
-import StrUtils(offsetPastChar)
+import Details.Strings.Utils(offsetPastChar)
 import Data.Char(isNumber)
 
 scannableAsStringLiteral :: String -> Bool
-scannableAsStringLiteral xs = any (isPrefixOf xs) ["\"", "u8\"", "R\"", "L\"", "u\"", "U\""] --todo: change this to regex since there can be any of the prefixes followed by R
+scannableAsStringLiteral xs = any (`isPrefixOf` xs) ["\"", "u8\"", "R\"", "L\"", "u\"", "U\""] --todo: change this to regex since there can be any of the prefixes followed by R
 
 scanString :: CursoredString -> (CursoredString, PPLiteral)
-scanString cs
-    | "\"" `isPrefixOf` xs = scanStringContents (CursString.incrementChars cs)
-    | otherwise = undefined
+scanString cs = case prefix of
+    Just p -> handlePrefix p
+    Nothing -> if "\"" `isPrefixOf` xs 
+        then scanStringContents (CursString.incrementChars cs)
+        else undefined
     where
+        prefix = find ((`isPrefixOf` xs) . fst) prefixes
+        handlePrefix (str, t) = scanString (CursString.advanceChars cs (length str)) `as` t
+        as xs t = second (`withStringType` t) xs
+        prefixes = [("u8", StrUTF8), ("u", StrUTF16), ("U", StrUTF32), ("L", StrLong)]
         xs = CursString.asScannableString cs
 
 scanStringContents :: CursoredString -> (CursoredString, PPLiteral)
@@ -31,9 +37,9 @@ scanStringContents' cs
             Right (newCS, scanned) -> let (nextCS, nextScanned) = scanStringContents' newCS in (nextCS, scanned ++ nextScanned)
     | startsWith '\"' = (CursString.incrementChars cs, [])
     | otherwise = let (nextStr, nextScanned) = scanStringContents' (CursString.incrementChars cs) in (nextStr, head xs : nextScanned)
-    where 
+    where
         startsWith c = head xs == c
-        xs = CursString.asScannableString cs 
+        xs = CursString.asScannableString cs
 
 scanEscaped :: CursoredString -> Either Char (CursoredString, String)
 scanEscaped cs
@@ -63,4 +69,4 @@ scanEscaped cs
             ('b', '\b'),
             ('"', '\"') ]
 
-errorUnfinishedString cs = error $ "unfinished string literal at " ++ show cs 
+errorUnfinishedString cs = error $ "unfinished string literal at " ++ show cs

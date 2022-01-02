@@ -1,10 +1,10 @@
 module NumberScannerSpec where
 
-import SpecHelper
+import Test.Hspec
 import CursorPosition
 import CursoredString (CursoredString)
 import qualified CursoredString as CursString
-import Details.NumberScanner
+import Details.Numbers.Scanner
 import PPLiteral
 
 numberFrom :: String -> PPLiteral 

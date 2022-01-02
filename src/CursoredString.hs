@@ -13,8 +13,7 @@ module CursoredString(
     ) where
 
 import CursorPosition as Curs
-import StrUtils(offsetPastEndl, pastTabsSpaces, startsWithEndl)
-import ListUtils(safeHead)
+import Details.Strings.Utils(offsetPastEndl, pastTabsSpaces, startsWithEndl, startsWith)
 
 data CursoredString = CursoredString {
     contents :: String,
@@ -38,17 +37,17 @@ advanceChars cs@(CursoredString str curs) offset
     | offset <= 0 = cs
     | mightStartWithMultiline =
         if startsWithEndl strPastSpaces
-        then advancedBy (1 + offsetTotal) offset --keep going past multiline, ignoring it
-        else onNormalCharacter
-    | startsWithEndl str = CursoredString.incrementLine $ advancedBy (offsetPastEndl str) decrementedOffset
+            then advanceBy (1 + offsetTotal) offset --keep going past multiline, ignoring it
+            else onNormalCharacter
+    | startsWithEndl str = CursoredString.incrementLine $ advanceBy (offsetPastEndl str) decrementedOffset
     | otherwise = onNormalCharacter
         where
-            (offsetPastSpaces, strPastSpaces) = pastTabsSpaces (tail str)
             offsetTotal = offsetPastSpaces + offsetPastEndl strPastSpaces
-            onNormalCharacter = advancedBy 1 decrementedOffset
+            (offsetPastSpaces, strPastSpaces) = pastTabsSpaces (tail str)
+            onNormalCharacter = advanceBy 1 decrementedOffset
             decrementedOffset = offset - 1
-            advancedBy contentsToDrop newOffset = advanceChars (CursoredString { contents = drop contentsToDrop str, cursor = Curs.addChar curs contentsToDrop }) newOffset
-            mightStartWithMultiline = safeHead str == Just '\\'
+            advanceBy contentsToDrop newOffset = advanceChars (CursoredString { contents = drop contentsToDrop str, cursor = Curs.addChar curs contentsToDrop }) newOffset
+            mightStartWithMultiline = str `startsWith` '\\'
 
 advanceCharsTo :: (String -> Int) -> CursoredString -> CursoredString
 advanceCharsTo f cs = advanceChars cs to
@@ -61,9 +60,9 @@ incrementChars curs = advanceChars curs 1
 toNextLine :: CursoredString -> CursoredString
 toNextLine = advanceCharsTo offsetPastEndl
 
-
 furtherThan :: CursoredString -> CursoredString -> Bool
 furtherThan (CursoredString _ (CursorPosition _ a)) (CursoredString _ (CursorPosition _ b)) = a > b
+
 
 --internals, perhaps add to its own Details file
 

@@ -1,11 +1,12 @@
-module StrUtils(
+module Details.Strings.Utils(
     offsetPastEndl,
     offsetPastTabsSpaces,
     pastEndl,
     pastTabsSpaces,
     startsWithEndl,
     offsetPastChar,
-    pastChar) where
+    pastChar,
+    startsWith) where
 
 offsetPastTabsSpaces :: String -> Int
 offsetPastTabsSpaces [] = 0
@@ -30,6 +31,10 @@ startsWithEndl :: String -> Bool
 startsWithEndl ('\r':'\n':_) = True
 startsWithEndl ('\n':_) = True
 startsWithEndl _ = False
+
+startsWith :: String -> Char -> Bool
+startsWith [] _ = False
+startsWith xs c = head xs == c
 
 offsetPastChar :: Char -> String -> Int
 offsetPastChar _ [] = 0

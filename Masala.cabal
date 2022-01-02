@@ -27,12 +27,12 @@ library
   exposed-modules:
       CursoredString
       CursorPosition
-      Details.NumberScanner
-      Details.StringScanner
+      Details.Numbers.Base
+      Details.Numbers.Scanner
+      Details.Strings.Scanner
+      Details.Strings.Utils
       Details.Tokeniser
-      ListUtils
       PPLiteral
-      StrUtils
       Token
       Tokeniser
       TokenType
@@ -62,7 +62,6 @@ test-suite Masala-test
   other-modules:
       CursoredStringSpec
       NumberScannerSpec
-      SpecHelper
       StringScannerSpec
       TestData.TokeniserInput
       TokeniserSpec

@@ -1,7 +1,7 @@
 module TestData.TokeniserInput where
 
 tokeniserSmallInput :: String
-tokeniserSmallInput = "#include\"myOtherPath.h\"\n"
+tokeniserSmallInput = "#include \"myOtherPath.h\"\n"
     ++ "#include <stddef.h>\n"
     ++ "#include <iostream>\n"
     ++ "\n"

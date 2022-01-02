@@ -1,6 +1,6 @@
 module TokeniserSpec where
 
-import SpecHelper
+import Test.Hspec
 import qualified Details.Tokeniser as DTok 
 import Tokeniser
 import Token
@@ -34,10 +34,10 @@ spec =
     describe "scanning tokens" $ do
         context "with small input" $
             it "should all have correct char number" $
-                allHaveCorrectStart tokeniserSmallInput `shouldBe` True
+                allHaveCorrectStart tokeniserSmallInput
         context "with long input" $
             it "should all have correct char number" $
-                allHaveCorrectStart tokeniserLongInput `shouldBe` True
+                allHaveCorrectStart tokeniserLongInput
         context "with body \"((a+b)*c) < 5\"" $
             it "should have tokens (, (, +, ), *, ), <" $ --todo: add symbol tokens when we can parse symbols
                 bodyTokenTypes "((a+b)*c) < 5" `shouldBe` [TokOpeningParens, TokOpeningParens, TokPlus, TokClosingParens, TokStar, TokClosingParens, TokOpeningChevron]

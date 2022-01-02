@@ -1,6 +1,6 @@
 module CursoredStringSpec where
 
-import SpecHelper 
+import Test.Hspec
 import CursoredString
 
 

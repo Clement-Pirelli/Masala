@@ -9,7 +9,7 @@ data TokenType =
     | TokDefine
     | TokUndef
     | TokPragma
-    | TokSymbolName
+    | TokName
     | TokInclude
     | TokEquals
     --Unary operators

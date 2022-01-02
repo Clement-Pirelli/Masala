@@ -1,12 +1,12 @@
 module Details.Tokeniser where
 
 import Token
-import StrUtils
-import Data.Char(isSpace, isNumber, isLetter)
+import Details.Strings.Utils
+import Data.Char(isSpace, isNumber, isLetter, isAlphaNum, isSymbol, isMark)
 import CursoredString(CursoredString)
 import qualified CursoredString as CursString
 import Data.Bifunctor(second)
-import Details.StringScanner (scanString, scannableAsStringLiteral)
+import Details.Strings.Scanner (scanString, scannableAsStringLiteral)
 
 scanTokens :: CursoredString -> Bool -> [Token]
 scanTokens cursStr spaceBefore
@@ -22,7 +22,7 @@ scanTokens cursStr spaceBefore
 
 onNoDirective :: CursoredString  -> [Token]
 onNoDirective cs
-    | head scanStr == '#' = error $ "Unrecognized preprocessor directive at " ++ show cs
+    | scanStr `startsWith` '#' = error $ "Unrecognized preprocessor directive at " ++ show cs
     | otherwise = scanTokens newCS True
     where
         newCS = CursString.toNextLine (CursString.advanceCharsTo offsetPastEndl cs)
@@ -65,8 +65,18 @@ scanUnrecognizedToken cs spaceBefore
     | isNumber firstLetter = (undefined, False, return undefined) 
     | isSpace firstLetter = (CursString.incrementChars cs, True, Nothing)
     | scannableAsStringLiteral str = let (newCS, lit) = scanString cs in (newCS, False, Just (Token TokLiteral "" (Just lit) (CursString.cursor cs) spaceBefore))
-    | otherwise = (undefined, False, return undefined) --anything else is a TokSymbol  
+    | otherwise = let (newCS, tok) = scanName cs spaceBefore in (newCS, False, return tok) --anything else is a TokSymbolName  
     where
         firstLetter = head str
         str = CursString.asScannableString cs
 
+scanName :: CursoredString -> Bool -> (CursoredString, Token)
+scanName cs spaceBefore = if offset /= 0
+        then (newCS, Token {tokenType=TokName, lexeme=take offset xs, literal=Nothing, cursor=CursString.cursor newCS, preceededBySpace=spaceBefore})
+        else error $ "scanName was called on an invalid input at " ++ show cs ++ "!"
+    where
+        newCS = CursString.advanceChars cs offset
+        offset = pastSymbol xs
+        xs = CursString.asScannableString cs
+        pastSymbol [] = 0
+        pastSymbol (x:xs) = if isAlphaNum x || isMark x || isSymbol x || x == '_' then 1 + pastSymbol xs else 0
