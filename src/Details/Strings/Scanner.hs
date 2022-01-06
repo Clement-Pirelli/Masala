@@ -5,18 +5,21 @@ import CursoredString(CursoredString)
 import qualified CursoredString as CursString
 import PPLiteral
 import Data.Bifunctor (second)
-import Details.Strings.Utils(offsetPastChar)
-import Data.Char(isNumber)
+import Details.Strings.Utils(offsetPastChar, pastChar, beforeChar, beforeOffset, offsetAtStr)
+import Data.Char(isDigit)
+
+import Text.Regex.TDFA
+import Debug.Trace (trace)
 
 scannableAsStringLiteral :: String -> Bool
-scannableAsStringLiteral xs = any (`isPrefixOf` xs) ["\"", "u8\"", "R\"", "L\"", "u\"", "U\""] --todo: change this to regex since there can be any of the prefixes followed by R
+scannableAsStringLiteral xs = xs =~ "^(u8|u|U|L)?R?\"" --maybe any one of the prefixes, followed by zero or one R, followed by '\"'
 
 scanString :: CursoredString -> (CursoredString, PPLiteral)
 scanString cs = case prefix of
     Just p -> handlePrefix p
     Nothing -> if "\"" `isPrefixOf` xs 
         then scanStringContents (CursString.incrementChars cs)
-        else undefined
+        else scanRawStringContents (CursString.advanceChars cs 2) -- past "R\""
     where
         prefix = find ((`isPrefixOf` xs) . fst) prefixes
         handlePrefix (str, t) = scanString (CursString.advanceChars cs (length str)) `as` t
@@ -41,13 +44,27 @@ scanStringContents' cs
         startsWith c = head xs == c
         xs = CursString.asScannableString cs
 
+--todo: rework this, it doesn't show intent at all
+scanRawStringContents :: CursoredString -> (CursoredString, PPLiteral)
+scanRawStringContents cs 
+    | null contents = error $ "Invalid raw string literal at " ++ show cs
+    | otherwise = (CursString.advanceChars cs offsetTotal, PPString {ppstrContents= contents, ppstrType=StrOrdinary , ppstrRaw=True})
+    where
+        offsetTotal = contentsStartOffset + contentsEndOffset + length endSuffix
+        (contentsEndOffset, contents) = beforeOffset (offsetAtStr endSuffix) contentsStr
+        endSuffix = ')':dcharSequence ++ "\""
+        contentsStr = drop contentsStartOffset xsBeforeEndl
+        dcharSequence = init beforeStart --get rid of the '('
+        (contentsStartOffset, beforeStart) = beforeChar '(' (take 16 xsBeforeEndl) --dcharSequence can only be 16 characters long: https://en.cppreference.com/w/cpp/language/string_literal
+        xsBeforeEndl = takeWhile (/= '\n') (CursString.asScannableString cs) --normally, the line break is part of the raw string literals, hence "raw". The preprocessor doesn't know about this though, for it it's just another line break
+
 scanEscaped :: CursoredString -> Either Char (CursoredString, String)
 scanEscaped cs
     | CursString.noMoreChars cs = Left '\0'
     | startsWith 'u' = undefined
     | startsWith 'U' = undefined
     | startsWith 'X' = undefined
-    | isNumber first = undefined
+    | isDigit first = undefined
     | otherwise = case lookup first escapes of
         Nothing -> Left first
         Just c -> Right (CursString.incrementChars cs, [c])

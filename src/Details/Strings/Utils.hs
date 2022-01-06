@@ -5,8 +5,15 @@ module Details.Strings.Utils(
     pastTabsSpaces,
     startsWithEndl,
     offsetPastChar,
+    offsetPastStr,
+    offsetAtStr,
     pastChar,
-    startsWith) where
+    beforeChar,
+    startsWith,
+    pastOffset,
+    beforeOffset) where
+
+import Data.List (isPrefixOf)
 
 offsetPastTabsSpaces :: String -> Int
 offsetPastTabsSpaces [] = 0
@@ -20,12 +27,6 @@ offsetPastEndl (x : y : xs)
   | x == '\n' = 1
   | otherwise = 1 + offsetPastEndl (y:xs)
 offsetPastEndl [_] = 1
-
-pastTabsSpaces :: String -> (Int, String)
-pastTabsSpaces = tupFromOffsetFunc offsetPastTabsSpaces
-
-pastEndl :: String -> (Int, String)
-pastEndl = tupFromOffsetFunc offsetPastEndl
 
 startsWithEndl :: String -> Bool
 startsWithEndl ('\r':'\n':_) = True
@@ -42,9 +43,34 @@ offsetPastChar c (x:xs)
   | x == c = 1
   | otherwise = 1 + offsetPastChar c xs
 
-pastChar :: Char -> String -> (Int, String)
-pastChar c = tupFromOffsetFunc (offsetPastChar c)
+offsetPastStr :: String -> String -> Int
+offsetPastStr xs ys
+    | offsetBefore == 0 = 0
+    | otherwise = length xs + offsetBefore
+    where
+        offsetBefore = offsetAtStr xs ys
 
-tupFromOffsetFunc :: ([a] -> Int) -> [a] -> (Int, [a]) 
-tupFromOffsetFunc f xs = (i, drop i xs) 
-    where i = f xs
+offsetAtStr :: String -> String -> Int
+offsetAtStr _ [] = 0
+offsetAtStr xs ys
+    | xs `isPrefixOf` ys = 0
+    | otherwise = 1 + offsetAtStr xs (tail ys)
+
+pastTabsSpaces :: String -> (Int, String)
+pastTabsSpaces = pastOffset offsetPastTabsSpaces
+
+pastEndl :: String -> (Int, String)
+pastEndl = pastOffset offsetPastEndl
+
+pastChar :: Char -> String -> (Int, String)
+pastChar c = pastOffset (offsetPastChar c)
+
+beforeChar :: Char -> String -> (Int, String)
+beforeChar c = beforeOffset (offsetPastChar c)
+
+pastOffset = tupWithOffsetFunc drop
+beforeOffset = tupWithOffsetFunc take
+
+tupWithOffsetFunc :: (Int -> [a] -> [a]) -> ([a] -> Int) -> [a] -> (Int, [a]) 
+tupWithOffsetFunc f g xs = (i, f i xs) 
+    where i = g xs
