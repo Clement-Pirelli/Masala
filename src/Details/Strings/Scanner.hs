@@ -9,7 +9,6 @@ import Details.Strings.Utils(offsetPastChar, pastChar, beforeChar, beforeOffset,
 import Data.Char(isDigit)
 
 import Text.Regex.TDFA
-import Debug.Trace (trace)
 
 scannableAsStringLiteral :: String -> Bool
 scannableAsStringLiteral xs = xs =~ "^(u8|u|U|L)?R?\"" --maybe any one of the prefixes, followed by zero or one R, followed by '\"'

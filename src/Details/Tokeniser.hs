@@ -7,6 +7,7 @@ import CursoredString(CursoredString)
 import qualified CursoredString as CursString
 import Data.Bifunctor(second)
 import Details.Strings.Scanner (scanString, scannableAsStringLiteral)
+import Details.Numbers.Scanner (scannableAsIntegral, scanNumber)
 
 scanTokens :: CursoredString -> Bool -> [Token]
 scanTokens cursStr spaceBefore
@@ -62,9 +63,9 @@ scanDirectiveBody cs spaceBefore
 scanUnrecognizedToken :: CursoredString -> Bool ->  (CursoredString, Bool, Maybe Token)
 scanUnrecognizedToken cs spaceBefore
     | CursString.noMoreChars cs = error $ "Empty string passed to scanUnrecognizedToken at" ++ show cs ++ "! This should never happen!"
-    | isNumber firstLetter = (undefined, False, return undefined) 
+    | scannableAsIntegral str = let (newCS, lit) = scanNumber cs in (newCS, False, Just (Token TokLiteral "" (Just lit) (CursString.cursor cs) spaceBefore)) 
     | isSpace firstLetter = (CursString.incrementChars cs, True, Nothing)
-    | scannableAsStringLiteral str = let (newCS, lit) = scanString cs in (newCS, False, Just (Token TokLiteral "" (Just lit) (CursString.cursor cs) spaceBefore))
+    | scannableAsStringLiteral str = let (newCS, lit) = scanString cs in (newCS, False, Just (Token TokLiteral (CursString.between cs newCS) (Just lit) (CursString.cursor cs) spaceBefore))
     | otherwise = let (newCS, tok) = scanName cs spaceBefore in (newCS, False, return tok) --anything else is a TokSymbolName  
     where
         firstLetter = head str

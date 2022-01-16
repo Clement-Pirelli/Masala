@@ -4,12 +4,20 @@ import CursoredString(CursoredString)
 import qualified CursoredString as CursString
 import PPLiteral
 import Details.Numbers.Base
-import Data.Char (toLower, digitToInt, intToDigit, isDigit, toUpper)
+import Data.Char (toLower, digitToInt, intToDigit, isDigit, toUpper, isNumber)
 import Data.List (isPrefixOf, foldl')
 import Details.Strings.Utils(startsWith)
+import Text.Regex.TDFA
 
-scannableAsNumberLiteral :: String -> Bool
-scannableAsNumberLiteral _ = False -- todo
+scannableAsFloatingPoint :: String -> Bool
+scannableAsFloatingPoint xs = xs =~ decimal
+    where
+        decimal = "(\\d*\\.)" --Todo: can't really use regex here, 
+        optionalSign = "(+|-)?"
+
+scannableAsIntegral :: String -> Bool
+scannableAsIntegral [] = False
+scannableAsIntegral (x:xs) = isNumber x
 
 scanNumber :: CursoredString -> (CursoredString, PPLiteral)
 scanNumber cs --todo: fix this

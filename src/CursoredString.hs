@@ -8,6 +8,7 @@ module CursoredString(
     incrementChars,
     toNextLine,
     furtherThan,
+    between,
 
     cursor
     ) where
@@ -63,6 +64,13 @@ toNextLine = advanceCharsTo offsetPastEndl
 furtherThan :: CursoredString -> CursoredString -> Bool
 furtherThan (CursoredString _ (CursorPosition _ a)) (CursoredString _ (CursorPosition _ b)) = a > b
 
+between :: CursoredString -> CursoredString -> String
+between a b = if deltaLength > 0 
+    then take deltaLength (asScannableString a)
+    else take (-deltaLength) (asScannableString b)
+    where
+        deltaLength = offsetOf b - offsetOf a 
+        offsetOf = Curs.character . cursor
 
 --internals, perhaps add to its own Details file
 

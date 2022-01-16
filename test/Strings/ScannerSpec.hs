@@ -47,8 +47,8 @@ spec =
         literal "Hello\\r\\nWorld" `shouldScanTo` "Hello\r\nWorld"
         literal "Hello\\\n\\r\\nWorld" `shouldScanTo` "Hello\r\nWorld"
         literal "Hello\\tWorld" `shouldScanTo` "Hello\tWorld"
-        (withPrefix "u8" . raw . literal) "foo(bar\\nbar)foo" `shouldScanToLit` PPString {ppstrContents="bar\\nbar", ppstrType=StrUTF8, ppstrRaw=True}
-        (withPrefix "L" . literal) "The quick brown fox jumps over the lazy dog" `shouldScanTo` "The quick brown fox jumps over the lazy dog"
+        ((`withPrefix` "u8") . raw . literal) "foo(bar\\nbar)foo" `shouldScanToLit` PPString {ppstrContents="bar\\nbar", ppstrType=StrUTF8, ppstrRaw=True}
+        ((`withPrefix` "L") . literal) "The quick brown fox jumps over the lazy dog" `shouldScanToLit` PPString {ppstrContents="The quick brown fox jumps over the lazy dog", ppstrType=StrLong, ppstrRaw=False}
 
         literal "Hello World!" `shouldLeave` ""
         "\"Hello World!\"\nHow are you" `shouldLeave` "\nHow are you"

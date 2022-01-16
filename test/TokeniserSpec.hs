@@ -38,8 +38,8 @@ spec =
             it "should all have correct char number" $
                 allHaveCorrectStart tokeniserLongInput
         context "with body \"((a+b)*c) < 5\"" $
-            it "should have tokens (, (, +, ), *, ), <" $ --todo: add symbol tokens when we can parse symbols
-                bodyTokenTypes "((a+b)*c) < 5" `shouldBe` [TokOpeningParens, TokOpeningParens, TokPlus, TokClosingParens, TokStar, TokClosingParens, TokOpeningChevron]
+            it "should have tokens (, (,a, +, b, ), *, c, ), <, 5" $
+                bodyTokenTypes "((a+b)*c) < 5" `shouldBe` [TokOpeningParens, TokOpeningParens, TokName, TokPlus, TokName, TokClosingParens, TokStar, TokName, TokClosingParens, TokOpeningChevron, TokLiteral]
 
 main :: IO ()
 main = hspec spec
