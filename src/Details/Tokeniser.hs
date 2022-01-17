@@ -8,13 +8,14 @@ import qualified CursoredString as CursString
 import Data.Bifunctor(second)
 import Details.Strings.Scanner (scanString, scannableAsStringLiteral)
 import Details.Numbers.Scanner (scannableAsIntegral, scanNumber)
+import Data.Maybe (listToMaybe)
 
 scanTokens :: CursoredString -> Bool -> [Token]
 scanTokens cursStr spaceBefore
     | CursString.noMoreChars cursStr = [Token { tokenType = TokEOF, lexeme = "", literal = Nothing, cursor = CursString.cursor cursStr, preceededBySpace = spaceBefore }]
     | otherwise = case directiveTok of
         Nothing -> onNoDirective directiveCursStr
-        Just (bodyStr, tok) -> tok : afterDirectiveToken bodyStr 
+        Just (bodyStr, tok) -> tok : afterDirectiveToken bodyStr
         where
             directiveTok = scanDirective directiveCursStr beforeDirectiveIsWhiteSpace
             directiveCursStr = CursString.advanceChars cursStr offsetPastSpace
@@ -27,7 +28,7 @@ onNoDirective cs
     | otherwise = scanTokens newCS True
     where
         newCS = CursString.toNextLine (CursString.advanceCharsTo offsetPastEndl cs)
-        scanStr = CursString.asScannableString cs 
+        scanStr = CursString.asScannableString cs
 
 afterDirectiveToken :: CursoredString  -> [Token]
 afterDirectiveToken cs = bodyToks ++ restToks
@@ -38,11 +39,12 @@ afterDirectiveToken cs = bodyToks ++ restToks
 scanDirective :: CursoredString -> Bool -> Maybe (CursoredString, Token)
 scanDirective cs spaceBefore = do
     let xs = CursString.asScannableString cs
-    tok <- xs `atStartOf` directiveTokens
-    let lexm = fst tok
-    let len = length lexm
-    let newStr = CursString.advanceChars cs len
-    return (newStr, Token { tokenType = snd tok, lexeme = lexm, literal = Nothing, cursor = CursString.cursor cs, preceededBySpace = spaceBefore })
+    h <- listToMaybe xs
+    if h /= '#' then Nothing else do
+        (lexm, tokType) <- tail xs `atStartOf` directiveTokens
+        let len = length lexm + 1
+        let newCS = CursString.advanceChars cs len
+        return (newCS, Token { tokenType = tokType, lexeme = '#':lexm, literal = Nothing, cursor = CursString.cursor cs, preceededBySpace = spaceBefore })
 
 scanDirectiveBody :: CursoredString  -> Bool -> (CursoredString, [Token])
 scanDirectiveBody cs spaceBefore
@@ -63,7 +65,7 @@ scanDirectiveBody cs spaceBefore
 scanUnrecognizedToken :: CursoredString -> Bool ->  (CursoredString, Bool, Maybe Token)
 scanUnrecognizedToken cs spaceBefore
     | CursString.noMoreChars cs = error $ "Empty string passed to scanUnrecognizedToken at" ++ show cs ++ "! This should never happen!"
-    | scannableAsIntegral str = let (newCS, lit) = scanNumber cs in (newCS, False, Just (Token TokLiteral "" (Just lit) (CursString.cursor cs) spaceBefore)) 
+    | scannableAsIntegral str = let (newCS, lit) = scanNumber cs in (newCS, False, Just (Token TokLiteral "" (Just lit) (CursString.cursor cs) spaceBefore))
     | isSpace firstLetter = (CursString.incrementChars cs, True, Nothing)
     | scannableAsStringLiteral str = let (newCS, lit) = scanString cs in (newCS, False, Just (Token TokLiteral (CursString.between cs newCS) (Just lit) (CursString.cursor cs) spaceBefore))
     | otherwise = let (newCS, tok) = scanName cs spaceBefore in (newCS, False, return tok) --anything else is a TokSymbolName  

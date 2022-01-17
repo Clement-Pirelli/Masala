@@ -16,15 +16,15 @@ data Token = Token {
 
 directiveTokens :: [(String, TokenType)]
 directiveTokens = [
-        ("#include", TokInclude),
-        ("#define", TokDefine),
-        ("#pragma", TokPragma),
-        ("#ifdef", TokIfdef),
-        ("#endif", TokEndif),
-        ("#elif", TokElif),
-        ("#else", TokElse),
-        ("#if", TokIf),
-        ("#undef", TokUndef)
+        ("include", TokInclude),
+        ("define", TokDefine),
+        ("pragma", TokPragma),
+        ("ifdef", TokIfdef),
+        ("endif", TokEndif),
+        ("elif", TokElif),
+        ("else", TokElse),
+        ("if", TokIf),
+        ("undef", TokUndef)
     ]
 
 bodyTokens :: [(String, TokenType)]
