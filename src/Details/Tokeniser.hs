@@ -73,7 +73,7 @@ scanUnrecognizedToken cs spaceBefore
 
 scanName :: CursoredString -> Bool -> (CursoredString, Token)
 scanName cs spaceBefore = if offset /= 0
-        then (newCS, Token {tokenType=TokName, lexeme=take offset xs, literal=Nothing, cursor=CursString.cursor newCS, preceededBySpace=spaceBefore})
+        then (newCS, Token {tokenType=TokName, lexeme=CursString.between cs newCS, literal=Nothing, cursor=CursString.cursor cs, preceededBySpace=spaceBefore})
         else error $ "scanName was called on an invalid input at " ++ show cs ++ "!"
     where
         newCS = CursString.advanceChars cs offset

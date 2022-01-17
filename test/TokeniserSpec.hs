@@ -1,24 +1,26 @@
 module TokeniserSpec where
 
 import Test.Hspec
-import qualified Details.Tokeniser as DTok 
+import qualified Details.Tokeniser as DTok
 import Tokeniser
 import Token
 import CursorPosition
 import Data.List (isPrefixOf)
 import CursoredString (newCursoredString)
+import Data.Maybe (catMaybes)
 
-hasCorrectStart :: Token -> String -> Bool
-hasCorrectStart tok str = lexm `isPrefixOf` str'
+tokenWithIncorrectStart :: Token -> String -> Maybe (Token, String)
+tokenWithIncorrectStart tok str = if lexm `isPrefixOf` str' then Nothing else Just (tok, take 10 str')
     where
         lexm = lexeme tok
         str' = drop charOffset str
         charOffset = character (cursor tok)
 
-allHaveCorrectStart :: String -> Bool
-allHaveCorrectStart str = f toks
+allHaveCorrectStart :: String -> Expectation
+allHaveCorrectStart str = catMaybes incorrectTokens `shouldBe` []
     where
-        f = all (`hasCorrectStart` str)
+        incorrectTokens = f toks
+        f = map (`tokenWithIncorrectStart` str)
         toks = scanTokens str
 
 toTypes :: [Token] -> [TokenType]
@@ -59,12 +61,11 @@ tokeniserShortInput = "#include \"myOtherPath.h\"\n"
     ++ "    std::cout << B(0) << '\\n';\n"
     ++ "#else\n"
     ++ "    std::cout << \"A is not defined!\";\n"
-    ++ "#endif\n"
-    ++ "}\n"
+    ++ "#endif\n"    ++ "}\n"
 
 tokeniserLongInput :: String
-tokeniserLongInput = 
-    "#include <iostream>\n" 
+tokeniserLongInput =
+    "#include <iostream>\n"
     ++ "#include \"myPath.h\"\n"
     ++ "\n"
     ++ "#define A ((1+2-3) / 4) < 10\n"
