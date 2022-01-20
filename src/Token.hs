@@ -14,6 +14,9 @@ data Token = Token {
     , preceededBySpace :: Bool
     } deriving (Show, Eq)
 
+withLiteral :: Token -> PPLiteral -> Token
+withLiteral (Token tokType lexm _ curs space) lit = Token tokType lexm (Just lit) curs space
+
 directiveTokens :: [(String, TokenType)]
 directiveTokens = [
         ("include", TokInclude),

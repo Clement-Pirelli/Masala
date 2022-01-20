@@ -5,4 +5,4 @@ import CursoredString ( newCursoredString )
 import Token ( Token )
 
 scanTokens :: String -> [Token]
-scanTokens xs = Details.scanTokens (newCursoredString xs) False
+scanTokens xs = snd $ Details.scanTokens (newCursoredString xs) False
