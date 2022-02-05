@@ -6,7 +6,9 @@ import qualified CursoredString as CursString
 import PPLiteral
 import Data.Bifunctor (second)
 import Details.Strings.Utils(offsetPastChar, pastChar, beforeChar, beforeOffset, offsetAtStr)
-import Data.Char(isDigit)
+import Data.Char(isDigit, chr)
+import Details.Numbers.Scanner
+import Details.Numbers.Base
 
 import Text.Regex.TDFA
 
@@ -35,7 +37,7 @@ scanStringContents' :: CursoredString -> (CursoredString, String)
 scanStringContents' cs
     | CursString.noMoreChars cs || startsWith '\n' = errorUnfinishedString cs
     | startsWith '\\' = case scanEscaped (CursString.incrementChars cs) of
-            Left c -> error ("Unrecognized escape character \'" ++ [c] ++ "\' at " ++ show cs)
+            Left err -> error ("Invalid or unrecognized escape character(s) \'" ++ err ++ "\' at " ++ show cs)
             Right (newCS, scanned) -> let (nextCS, nextScanned) = scanStringContents' newCS in (nextCS, scanned ++ nextScanned)
     | startsWith '\"' = (CursString.incrementChars cs, [])
     | otherwise = let (nextStr, nextScanned) = scanStringContents' (CursString.incrementChars cs) in (nextStr, head xs : nextScanned)
@@ -57,15 +59,15 @@ scanRawStringContents cs
         (contentsStartOffset, beforeStart) = beforeChar '(' (take 16 xsBeforeEndl) --dcharSequence can only be 16 characters long: https://en.cppreference.com/w/cpp/language/string_literal
         xsBeforeEndl = takeWhile (/= '\n') (CursString.asScannableString cs) --normally, the line break is part of the raw string literals, hence "raw". The preprocessor doesn't know about this though, for it it's just another line break
 
-scanEscaped :: CursoredString -> Either Char (CursoredString, String)
+scanEscaped :: CursoredString -> Either String (CursoredString, String)
 scanEscaped cs
-    | CursString.noMoreChars cs = Left '\0'
+    | CursString.noMoreChars cs = Left ['\0']
     | startsWith 'u' = undefined
     | startsWith 'U' = undefined
     | startsWith 'X' = undefined
-    | isDigit first = undefined
+    | isDigit first = Right $ onEscapedDigit cs
     | otherwise = case lookup first escapes of
-        Nothing -> Left first
+        Nothing -> Left [first]
         Just c -> Right (CursString.incrementChars cs, [c])
     where
         startsWith c = first == c
@@ -84,5 +86,12 @@ scanEscaped cs
             ('f', '\f'),
             ('b', '\b'),
             ('"', '\"') ]
+
+onEscapedDigit :: CursoredString -> (CursoredString, String)
+onEscapedDigit cs = case lit of
+    PPInt n -> (newCS, [chr $ fromInteger n])
+    _ -> undefined
+    where
+        (newCS, lit) = scanInteger (IntegerScan (Base 8) cs [])
 
 errorUnfinishedString cs = error $ "unfinished string literal at " ++ show cs

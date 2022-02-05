@@ -32,21 +32,25 @@ scanNumber cs --todo: fix this
         isFloatingPoint = False --Figure out a way to do this, stat. Probably a regex again
         xs = CursString.asScannableString cs
 
-scanBinary = scanInteger (Base 2)
-scanHexa = scanInteger (Base 16)
-scanOctal = scanInteger (Base 8)
-scanDecimal = scanInteger (Base 10)
+scanBinary cs = scanInteger ( IntegerScan (Base 2) cs ['\''])
+scanHexa cs = scanInteger ( IntegerScan (Base 16) cs ['\''])
+scanOctal cs = scanInteger ( IntegerScan (Base 8) cs ['\''])
+scanDecimal cs = scanInteger ( IntegerScan (Base 10) cs ['\''])
 
-scanInteger :: Base -> CursoredString -> (CursoredString, PPLiteral)
-scanInteger base cs = (CursString.advanceChars cs offset, PPInt n)
+
+data IntegerScan = IntegerScan Base CursoredString [Char]
+
+scanInteger :: IntegerScan -> (CursoredString, PPLiteral)
+scanInteger (IntegerScan base scanned ignore) = (CursString.advanceChars scanned offset, PPInt n)
     where
         (offset, n) = step (0, 0) xs
-        xs = CursString.asScannableString cs
+        xs = CursString.asScannableString scanned
         step t@(count, oN) (c:str)
-            | c == '\'' = step t str
+            | c `elem` ignore = step t str
             | c `isBase` base = step (count + 1, toInteger (digitToInt c) + (oN `asBase` base)) str
-            | otherwise = if count > 0 then t else error $ "Incomplete integral literal at " ++ show cs
+            | otherwise = if count > 0 then t else error $ "Incomplete integral literal at " ++ show scanned
         step t [] = t
+
 
 
 scanFloatingPoint :: CursoredString -> (CursoredString, PPLiteral)
