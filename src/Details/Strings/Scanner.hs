@@ -7,9 +7,7 @@ import PPLiteral
 import Data.Bifunctor (second)
 import Details.Strings.Utils(offsetPastChar, pastChar, beforeChar, offsetAtStr)
 import Details.ListUtils(beforeOffset)
-import Data.Char(isDigit, chr)
-import Details.Numbers.Scanner
-import Details.Numbers.Base
+import Data.Char(isDigit, chr, digitToInt)
 
 import Text.Regex.TDFA
 
@@ -39,7 +37,7 @@ scanStringContents' cs
     | CursString.noMoreChars cs || startsWith '\n' = errorUnfinishedString cs
     | startsWith '\\' = case scanEscaped (CursString.incrementChars cs) of
             Left err -> error ("Invalid or unrecognized escape character(s) \'" ++ err ++ "\' at " ++ show cs)
-            Right (newCS, scanned) -> let (nextCS, nextScanned) = scanStringContents' newCS in (nextCS, scanned ++ nextScanned)
+            Right (newCS, scanned) -> let (nextCS, nextScanned) = scanStringContents' newCS in (nextCS, scanned : nextScanned)
     | startsWith '\"' = (CursString.incrementChars cs, [])
     | otherwise = let (nextStr, nextScanned) = scanStringContents' (CursString.incrementChars cs) in (nextStr, head xs : nextScanned)
     where
@@ -60,7 +58,7 @@ scanRawStringContents cs
         (contentsStartOffset, beforeStart) = beforeChar '(' (take 16 xsBeforeEndl) --dcharSequence can only be 16 characters long: https://en.cppreference.com/w/cpp/language/string_literal
         xsBeforeEndl = takeWhile (/= '\n') (CursString.asScannableString cs) --normally, the line break is part of the raw string literals, hence "raw". The preprocessor doesn't know about this though, for it it's just another line break
 
-scanEscaped :: CursoredString -> Either String (CursoredString, String)
+scanEscaped :: CursoredString -> Either String (CursoredString, Char)
 scanEscaped cs
     | CursString.noMoreChars cs = Left ['\0']
     | startsWith 'u' = undefined
@@ -69,7 +67,7 @@ scanEscaped cs
     | isDigit first = Right $ onEscapedDigit cs
     | otherwise = case lookup first escapes of
         Nothing -> Left [first]
-        Just c -> Right (CursString.incrementChars cs, [c])
+        Just c -> Right (CursString.incrementChars cs, c)
     where
         startsWith c = first == c
         second = head (tail xs)
@@ -88,11 +86,14 @@ scanEscaped cs
             ('b', '\b'),
             ('"', '\"') ]
 
-onEscapedDigit :: CursoredString -> (CursoredString, String)
-onEscapedDigit cs = case lit of
-    PPInt n -> (newCS, [chr $ fromInteger n])
-    _ -> undefined
+onEscapedDigit :: CursoredString -> (CursoredString, Char)
+onEscapedDigit cs = (CursString.advanceChars cs offsetPast, chr scanned)
     where
-        (newCS, lit) = scanInteger (IntegerScan (Base 8) cs []) --todo: this accepts more than 3 digits, and so will fail on "\1013" which should return "A3". Wild. Using scanInteger here is a bit hacky anyways, I should probably just re-implement it for this specific use-case
+        scanned = foldr (\c n -> digitToInt c + n*8) 0 scannable
+        offsetPast = length scannable
+        scannable = takeWhile (`elem` ['0'..'7']) trimmed
+        trimmed = take 3 xs --octal escapes are only 3 digits long, so "\1013" is "A3"
+        xs = CursString.asScannableString cs
+
 
 errorUnfinishedString cs = error $ "unfinished string literal at " ++ show cs

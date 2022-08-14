@@ -49,7 +49,7 @@ spec =
         ((`withPrefix` "u8") . raw . literal) "foo(bar\\nbar)foo" `shouldScanToLit` PPString {ppstrContents="bar\\nbar", ppstrType=StrUTF8, ppstrRaw=True}
         ((`withPrefix` "L") . literal) "The quick brown fox jumps over the lazy dog" `shouldScanToLit` PPString {ppstrContents="The quick brown fox jumps over the lazy dog", ppstrType=StrLong, ppstrRaw=False}
         literal "\\0" `shouldScanTo` "\0"
-
+        literal "\\1013" `shouldScanTo` "A3"
         literal "Hello World!" `shouldLeave` ""
         "\"Hello World!\"\nHow are you" `shouldLeave` "\nHow are you"
 

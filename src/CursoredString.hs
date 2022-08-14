@@ -56,6 +56,7 @@ advanceChars cs@(CursoredString str curs) currOffset
     where
         mightStartWithEscapedLine = str `startsWith` '\\'
 
+--doesn't support \ in multiline comment, will give wrong line number if in the body or break if in \* or *\, e.g. *\n\
 handleMultiComment cs@(CursoredString str _) currOffset = 
     CursoredString.addLine lineCount $ advanceBy cs charOffset currOffset
     where
