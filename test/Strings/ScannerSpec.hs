@@ -1,7 +1,6 @@
 module Strings.ScannerSpec where
 
 import Test.Hspec
-import CursorPosition
 import CursoredString (CursoredString)
 import qualified CursoredString as CursString
 import Details.Strings.Scanner

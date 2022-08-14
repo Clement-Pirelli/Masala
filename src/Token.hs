@@ -2,7 +2,7 @@ module Token(module Token, module TokenType, module PPLiteral) where
 
 import TokenType
 import PPLiteral
-import CursorPosition(CursorPosition)
+import TextCursor(TextCursor)
 
 import Data.List(isPrefixOf, find)
 
@@ -10,7 +10,7 @@ data Token = Token {
       tokenType :: TokenType
     , lexeme :: String
     , literal :: Maybe PPLiteral
-    , cursor :: CursorPosition 
+    , cursor :: TextCursor 
     , preceededBySpace :: Bool
     } deriving (Show, Eq)
 

@@ -4,7 +4,7 @@ import Test.Hspec
 import qualified Details.Tokeniser as DTok
 import Tokeniser
 import Token
-import CursorPosition
+import TextCursor
 import Data.List (isPrefixOf)
 import CursoredString (newCursoredString)
 import Data.Maybe (catMaybes)
@@ -30,6 +30,16 @@ bodyTokenTypes :: String -> [TokenType]
 bodyTokenTypes input = toTypes (snd output)
     where output = DTok.scanDirectiveBody (newCursoredString input) False
 
+testTokens input toks = 
+    context (withInput input) $ 
+        it tokDescription $ 
+            bodyTokenTypes input `shouldBe` toks
+    where
+        tokDescription 
+            | null toks = "shouldn't have any tokens"
+            | otherwise = "should have tokens " ++ show toks
+        withInput input = "with body \"" ++ input ++ "\"" 
+
 spec :: Spec
 spec =
     describe "scanning tokens" $ do
@@ -39,9 +49,11 @@ spec =
         context "with long input" $
             it "should all have correct char number" $
                 allHaveCorrectStart tokeniserLongInput
-        context "with body \"((a+b)*c) < 5\"" $
-            it "should have tokens (, (,a, +, b, ), *, c, ), <, 5" $
-                bodyTokenTypes "((a+b)*c) < 5" `shouldBe` [TokOpeningParens, TokOpeningParens, TokName, TokPlus, TokName, TokClosingParens, TokStar, TokName, TokClosingParens, TokOpeningChevron, TokLiteral]
+        testTokens "((a+b)*c) < 5" [TokOpeningParens, TokOpeningParens, TokName, TokPlus, TokName, TokClosingParens, TokStar, TokName, TokClosingParens, TokOpeningChevron, TokLiteral]
+        testTokens "/*\nHELLO_WORLD 1\n*/" []
+        testTokens "HELLO_WORLD /*1*/" [TokName]
+        testTokens "HELLO_WORLD //1" [TokName]
+        testTokens "//HELLO_WORLD 1" []
 
 main :: IO ()
 main = hspec spec

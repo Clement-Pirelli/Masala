@@ -26,10 +26,15 @@ spec =
             scannableStringTest "#def\\\r\nine A" "#define A"
             scannableStringTest "#def\\\t\t\r\nine B" "#define B"
             scannableStringTest "#define A\r\n#define B" "#define A\n#define B"
+            scannableStringTest "//#define A\r\n#define B" "#define B"
+            scannableStringTest "#define A/*\r\n#define B*/" "#define A"
         describe "advanceChars" $ do
             advanceCharsTest "Hello World" 1 "ello World"
             advanceCharsTest "Hello\\\r\nWorld" 1 "elloWorld"
             advanceCharsTest "Hello\\\r\nWorld" 6 "orld"
+            advanceCharsTest "Hello// \nWorld" 5 "World"
+            advanceCharsTest "Hello/* \n*/World" 5 "World"
+            
 
 
 

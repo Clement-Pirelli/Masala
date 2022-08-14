@@ -26,13 +26,17 @@ source-repository head
 library
   exposed-modules:
       CursoredString
-      CursorPosition
+      CursoredTokens
+      Details.ListUtils
       Details.Numbers.Base
       Details.Numbers.Scanner
       Details.Strings.Scanner
       Details.Strings.Utils
       Details.Tokeniser
+      Node
+      Parser
       PPLiteral
+      TextCursor
       Token
       Tokeniser
       TokenType

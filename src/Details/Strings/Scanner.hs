@@ -5,7 +5,8 @@ import CursoredString(CursoredString)
 import qualified CursoredString as CursString
 import PPLiteral
 import Data.Bifunctor (second)
-import Details.Strings.Utils(offsetPastChar, pastChar, beforeChar, beforeOffset, offsetAtStr)
+import Details.Strings.Utils(offsetPastChar, pastChar, beforeChar, offsetAtStr)
+import Details.ListUtils(beforeOffset)
 import Data.Char(isDigit, chr)
 import Details.Numbers.Scanner
 import Details.Numbers.Base
@@ -92,6 +93,6 @@ onEscapedDigit cs = case lit of
     PPInt n -> (newCS, [chr $ fromInteger n])
     _ -> undefined
     where
-        (newCS, lit) = scanInteger (IntegerScan (Base 8) cs [])
+        (newCS, lit) = scanInteger (IntegerScan (Base 8) cs []) --todo: this accepts more than 3 digits, and so will fail on "\1013" which should return "A3". Wild. Using scanInteger here is a bit hacky anyways, I should probably just re-implement it for this specific use-case
 
 errorUnfinishedString cs = error $ "unfinished string literal at " ++ show cs
