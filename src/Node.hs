@@ -2,10 +2,10 @@ module Node where
 
 import Token
 
-data IncludeForm = Quoted | AngleBrackets
-data IfType = OrdinaryIf | Ifdef | Ifndef
-data BinaryOpType = Concatenate | Multiply | Divide | Xor | And | Or | BitAnd | BitOr | GreaterThan | LessThan | EqualTo | GreaterThanEqual | LessThanEqual | NotEqual 
-data UnaryOpType = Stringify | Not | BitNot | Minus | Plus
+data IncludeForm = Quoted | AngleBrackets deriving(Show, Eq)
+data IfType = OrdinaryIf | Ifdef | Ifndef deriving(Show, Eq)
+data BinaryOpType = Concatenate | Multiply | Divide | Xor | And | Or | BitAnd | BitOr | GreaterThan | LessThan | EqualTo | GreaterThanEqual | LessThanEqual | NotEqual deriving(Show, Eq)
+data UnaryOpType = Stringify | Not | BitNot | Minus | Plus deriving(Show, Eq)
 
 data NodeContents = 
       UnaryOp { op :: Node, unaryOpType :: UnaryOpType } 
@@ -15,9 +15,40 @@ data NodeContents =
     | Else { body :: [Node] }
     | Include { path :: Node, form :: IncludeForm }
     | Pragma [Node]
-    | Define { name :: Node, params :: Maybe [Node], defineContents :: Either [Token] [Node] }
-    | Undef { name :: Node }
+    | Define { symbol :: Node, params :: Maybe [Node], defineContents :: Either [Token] [Node] }
+    | Undef { symbol :: Node }
     | Symbol
     | Literal
+    deriving(Show)
 
-data Node = Node Token NodeContents
+data Node = Node { token :: Token, contents :: NodeContents } deriving(Show)
+
+isSymbol :: Node -> Bool
+isSymbol n = case contents n of
+    Symbol -> True
+    _ -> False
+
+isLiteral :: Node -> Bool
+isLiteral n = case contents n of
+    Literal -> True
+    _ -> False
+
+
+
+defineSymbolIs :: Node -> (Node -> Bool) -> Bool
+defineSymbolIs node pred = case contents node of
+    Define symbol _ _ -> pred symbol
+    _ -> False
+
+defineParamsAre :: Node -> (Maybe [Node] -> Bool) -> Bool
+defineParamsAre node pred = case contents node of 
+    Define _ params _ -> pred params
+    _ -> False
+
+defineContentsAre :: Node -> (Either [Token] [Node] -> Bool) -> Bool
+defineContentsAre node pred = case contents node of 
+    Define _ _ contents -> pred contents
+    _ -> False
+    
+lexemeIs :: Node -> String -> Bool
+(Node tok _) `lexemeIs` s = lexeme tok == s

@@ -25,14 +25,16 @@ source-repository head
 
 library
   exposed-modules:
+      Cursored
       CursoredString
-      CursoredTokens
       Details.ListUtils
       Details.Numbers.Base
       Details.Numbers.Scanner
+      Details.Parser
       Details.Strings.Scanner
       Details.Strings.Utils
       Details.Tokeniser
+      Details.TokenParser
       Node
       Parser
       PPLiteral
@@ -67,6 +69,7 @@ test-suite Masala-test
   other-modules:
       CursoredStringSpec
       Numbers.ScannerSpec
+      ParserSpec
       Strings.ScannerSpec
       TokeniserSpec
       Paths_Masala
