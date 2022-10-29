@@ -1,15 +1,29 @@
-module Parser(parsePP) where
+module Parser(parseTokens, parseTokensLenient) where
 
 import Details.Parser
 import Details.TokenParser
 import Node
 import Token
 import Cursored
+import Details.EitherUtils
+import Data.Maybe
 
-parsePP :: [Token] -> [Node]
-parsePP toks = case parsed of
-        Right (nodes, _) -> nodes
-        Left err -> error err
+parseTokens :: [Token] -> [Node]
+parseTokens = unwrapEither . parseTokensLenient
+
+parseTokensLenient :: [Token] -> Either String [Node]
+parseTokensLenient toks = fmap fst parsed
     where
-        parsed = parse (many' parseDirective) curs 
+        parsed = parse parser curs 
         curs = Cursored toks 0
+
+parser :: Parser [Node]
+parser = do 
+    isEOF <- optional $ ofType TokEOF
+    if isJust isEOF 
+        then return []
+        else do
+            dir <- parseDirective
+            dirs <- parser
+            return $ dir : dirs 
+    

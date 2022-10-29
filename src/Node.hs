@@ -13,7 +13,7 @@ data NodeContents =
     | If { expression :: Node, body :: [Node], ifType :: IfType, elseClause :: Maybe Node }
     | Elif { expression :: Node, body :: [Node] }
     | Else { body :: [Node] }
-    | Include { path :: Node, form :: IncludeForm }
+    | Include { path :: String, form :: IncludeForm }
     | Pragma [Node]
     | Define { symbol :: Node, params :: Maybe [Node], defineContents :: Either [Token] [Node] }
     | Undef { symbol :: Node }
@@ -32,8 +32,6 @@ isLiteral :: Node -> Bool
 isLiteral n = case contents n of
     Literal -> True
     _ -> False
-
-
 
 defineSymbolIs :: Node -> (Node -> Bool) -> Bool
 defineSymbolIs node pred = case contents node of

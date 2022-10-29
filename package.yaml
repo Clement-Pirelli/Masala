@@ -21,7 +21,8 @@ dependencies:
 
 library:
   source-dirs: src
-  dependencies: regex-tdfa
+  dependencies: 
+  - regex-tdfa
 
 executables:
   Masala-exe:
