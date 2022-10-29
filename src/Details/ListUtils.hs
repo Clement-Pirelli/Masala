@@ -5,6 +5,7 @@ takeWhileList :: ([a] -> Bool) -> [a] -> [a]
 takeWhileList f whole@(x:xs) 
     | f whole = whole
     | otherwise = x : takeWhileList f xs
+takeWhileList _ [] = []
 
 offsetPastSublist :: (Eq a) => [a] -> [a] -> Int
 offsetPastSublist [] xs = 0
