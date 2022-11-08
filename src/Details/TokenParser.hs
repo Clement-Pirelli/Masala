@@ -4,6 +4,7 @@ import Details.Parser
 import Node
 import Token
 import Cursored(peek)
+import Data.Maybe(isJust)
 
 parseDirective :: Parser Node
 parseDirective = parseDefine `or'` parseInclude
@@ -11,34 +12,50 @@ parseDirective = parseDefine `or'` parseInclude
 parseDefine :: Parser Node
 parseDefine = do
             (tok, name) <- tdefine `followedBy` nameToSymbol
-            parameters <- funcLike
-            return $ Node tok Define { symbol = name, params = parameters, defineContents = Right [] }
+            (spaceBefore, parameters) <- optional spaceBefore `and'` funcLike
+            let nodeParameters = spaceBefore >> parameters
+            return $ Node tok Define { symbol = name, params = nodeParameters, defineContents = Right [] }
             where
-                funcLike = optional $ betweenParens ((nameToSymbol `separatedBy` tcomma) `or'` result [])
-                objectLike = optional spaceBefore 
+                funcLike = optional $ betweenParens funcParams
+                funcParams = (nameToSymbol `separatedBy` tcomma) `or'` result []
 
 parseInclude :: Parser Node
 parseInclude = do
     tok <- ofType TokInclude
-    (strTok, str) <- ofType TokLiteral `and'` includeString
-    let parsed = Node tok $ Include { path = str, form = Quoted }
+    content <- includeQuotedString `or'` includeChevronString
+    let parsed = Node tok content
     return parsed
 
-includeString :: Parser String
-includeString = do
-    tok <- item
+includeQuotedString :: Parser NodeContents
+includeQuotedString = do
+    tok <- ofType TokLiteral
     let notStrErr = "Unexpected token. Expected string literal after #include directive"
     literal <- extractLiteral notStrErr tok
-    extractContents "Expected an ordinary string after #include directive" literal
+    content <- extractContent "Expected an ordinary string after #include directive" literal
+    return $ Include { path = content, form = QuotedInclude }
     where
         extractLiteral _ (Token TokLiteral _ (Just lit) _ _) = return lit
-        extractLiteral err _ = oops err 
-        extractContents _ (PPString contents StrOrdinary False) = return contents
-        extractContents err _ = oops err 
+        extractLiteral err _ = oops err
+        extractContent _ (PPString content StrOrdinary False) = return content
+        extractContent err _ = oops err
+
+includeChevronString :: Parser NodeContents
+includeChevronString = do
+    let
+        open = ofType TokOpeningChevron
+        close = ofType TokClosingChevron
+        middle = many' $ fmap snd $ notEOF `and'` notOfType TokClosingChevron
+    toks <- surroundedBy open middle close
+    let asString = concatMap lexeme toks
+    return $ Include { path = asString, form = ChevronInclude }
 
 ofType :: TokenType -> Parser Token
 ofType t = satisfy err ((== t) . tokenType)
     where err = "Unexpected token while trying to match token of type " ++ show t
+
+notOfType :: TokenType -> Parser Token
+notOfType t = exclude err ((== t) . tokenType)
+    where err = "Unexpected token while trying to avoid tokens of type " ++ show t
 
 spaceBefore :: Parser Token
 spaceBefore = satisfy "Expected a space before token" Token.preceededBySpace
@@ -59,4 +76,9 @@ tdefine :: Parser Token
 tdefine = ofType TokDefine
 
 betweenParens :: Parser b -> Parser b
-betweenParens x = surroundedBy (ofType TokOpeningParens) x (ofType TokClosingParens)
+betweenParens parser = surroundedBy (ofType TokOpeningParens) parser (ofType TokClosingParens)
+
+notEOF :: Parser Token
+notEOF = exclude "Unexpected end of file" isEOF
+    where
+        isEOF t = tokenType t == TokEOF

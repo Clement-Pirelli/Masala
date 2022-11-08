@@ -54,6 +54,7 @@ spec =
         testTokens "HELLO_WORLD /*1*/" [TokName]
         testTokens "HELLO_WORLD //1" [TokName]
         testTokens "//HELLO_WORLD 1" []
+        testTokens "#include <a.h>" [TokInclude, TokOpeningChevron, TokName, TokDot, TokName, TokClosingChevron]
 
 main :: IO ()
 main = hspec spec

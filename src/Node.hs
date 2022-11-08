@@ -2,7 +2,7 @@ module Node where
 
 import Token
 
-data IncludeForm = Quoted | AngleBrackets deriving(Show, Eq)
+data IncludeForm = QuotedInclude | ChevronInclude deriving(Show, Eq)
 data IfType = OrdinaryIf | Ifdef | Ifndef deriving(Show, Eq)
 data BinaryOpType = Concatenate | Multiply | Divide | Xor | And | Or | BitAnd | BitOr | GreaterThan | LessThan | EqualTo | GreaterThanEqual | LessThanEqual | NotEqual deriving(Show, Eq)
 data UnaryOpType = Stringify | Not | BitNot | Minus | Plus deriving(Show, Eq)

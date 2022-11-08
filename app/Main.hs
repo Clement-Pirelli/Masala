@@ -1,12 +1,14 @@
 module Main where
 
 import Tokeniser (scanTokens)
+import Parser (parseTokens)
 
 
 main :: IO ()
 main = do
     let toks = scanTokens tokeniserInput
-    mapM_ print toks
+        nodes = parseTokens toks
+    mapM_ print nodes
 
 
 

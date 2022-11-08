@@ -26,6 +26,10 @@ shouldError input = context ("with" ++ show input) $
     where
         isError = not $ isRight $ (parseTokensLenient . scanTokens) input
 
+include :: IncludeForm -> String -> Node -> Bool
+include form path node = case contents node of 
+                            Include path form -> True
+                            _ -> False
 
 
 spec :: Spec
@@ -38,10 +42,8 @@ spec =
                 areRightNames = and . zipWith isLexeme ["a", "b", "c", "d"]
                 hasRightParams = paramsMatch areRightNames
             shouldMatchWith "#define A(a, b, c, d) " hasRightParams "having a function-like define with params a b c and d"
-            let ordinaryInclude path node = case contents node of 
-                                                Include path Quoted -> True
-                                                _ -> False
-            shouldMatchWith "#include \"a.h\"" (ordinaryInclude "a.h") "an ordinary include whose path is \"a.h\""
+            shouldMatchWith "#include \"a.h\"" (include QuotedInclude "a.h") "an ordinary include whose path is \"a.h\""
+            shouldMatchWith "#include <a.h>" (include ChevronInclude "a.h") "a chevron include whose path is \"a.h\""
             shouldError "#include"
             shouldError "#define"
 
