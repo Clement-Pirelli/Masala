@@ -43,7 +43,7 @@ noMoreChars :: CursoredString -> Bool
 noMoreChars = null . asScannableString
 
 advanceChars :: CursoredString -> Int -> CursoredString
-advanceChars cs@(CursoredString str curs) currOffset
+advanceChars cs@(CursoredString str _) currOffset
     | currOffset <= 0 = cs
     | startsWithMultiComment str = 
         handleMultiComment cs currOffset
@@ -57,13 +57,15 @@ advanceChars cs@(CursoredString str curs) currOffset
         mightStartWithEscapedLine = str `startsWith` '\\'
 
 --doesn't support \ in multiline comment, will give wrong line number if in the body or break if in \* or *\, e.g. *\n\
+handleMultiComment :: CursoredString -> Int -> CursoredString
 handleMultiComment cs@(CursoredString str _) currOffset = 
     CursoredString.addLine lineCount $ advanceBy cs charOffset currOffset
     where
         lineCount = (length . lines) beforeEnd
         (charOffset, beforeEnd) = pastString "*/" str
 
-handleEscapedLine cs@(CursoredString str curs) currOffset 
+handleEscapedLine :: CursoredString -> Int -> CursoredString
+handleEscapedLine cs@(CursoredString str _) currOffset 
     | startsWithEndl strPastSpaces = advanceBy cs (1 + offsetTotal) currOffset --keep going past escaped line, ignoring it
     | otherwise = advanceByOne cs currOffset
     where
@@ -118,9 +120,15 @@ addLine :: Int -> CursoredString -> CursoredString
 addLine i (CursoredString xs curs) = CursoredString { contents = xs, cursor = Curs.addLine curs i }
 
 
-advanceByOne cs oldOffset = advanceBy cs 1 (oldOffset - 1) 
+advanceByOne :: CursoredString -> Int -> CursoredString
+advanceByOne cs oldOffset = advanceBy cs 1 (oldOffset - 1)
+
+advanceBy :: CursoredString -> Int -> Int -> CursoredString
 advanceBy (CursoredString s c) contentsToDrop = 
     advanceChars (CursoredString { contents = drop contentsToDrop s, cursor = Curs.addChar c contentsToDrop })
 
+startsWithMultiComment :: [Char] -> Bool
 startsWithMultiComment = ("/*" `isPrefixOf`)
+
+startsWithSingleComment :: [Char] -> Bool
 startsWithSingleComment = ("//" `isPrefixOf`)

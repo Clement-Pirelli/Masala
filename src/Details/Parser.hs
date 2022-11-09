@@ -1,10 +1,8 @@
+{-# LANGUAGE InstanceSigs #-}
 module Details.Parser where
 
-import Node
 import Cursored
-import TokenType
 import Token
-import TextCursor
 import Data.Functor
 
 
@@ -12,6 +10,7 @@ import Data.Functor
 newtype Parser a = Parser { parse :: Cursored Token -> Either String (a, Cursored Token) }
 
 instance Monad Parser where
+  (>>=) :: Parser a -> (a -> Parser b) -> Parser b
   parser >>= f = Parser bound
     where
         bound curs = parse parser curs >>= handleF
@@ -36,23 +35,23 @@ item :: Parser Token
 item = Parser (Right . eat)
 
 satisfy :: String -> (Token -> Bool) -> Parser Token
-satisfy err pred = do
+satisfy err predicate = do
     x <- item
-    if pred x 
+    if predicate x 
         then return x 
         else oops err
 
 exclude :: String -> (Token -> Bool) -> Parser Token
-exclude err pred = satisfy err (not . pred)
+exclude err predicate = satisfy err (not . predicate)
 
 or' :: Parser a -> Parser a -> Parser a
 p `or'` q = Parser $ \input -> parse p input <> parse q input
 
 and' :: Parser a -> Parser b -> Parser (a, b)
-p `and'` q = do
-    x <- p
-    y <- q
-    return (x, y)
+p `and'` q = Parser $ \input -> do
+    (x, _) <- parse p input
+    (y, after) <- parse q input
+    return ((x, y), after)
 
 many' :: Parser a -> Parser [a]
 many' parser = do
@@ -79,9 +78,9 @@ parser `separatedBy` separator = do
 
 surroundedBy :: Parser a -> Parser b -> Parser c -> Parser b
 surroundedBy open parser close = do
-    open
+    _ <- open
     x <- parser 
-    close
+    _ <- close
     return x
 
 followedBy :: Parser a -> Parser b -> Parser (a, b)
@@ -98,5 +97,5 @@ peeked :: Parser a -> Parser a
 peeked parser = Parser p
     where
         p toks = do
-            (x, next) <- parse parser toks
+            (x, _) <- parse parser toks
             return (x, toks) 

@@ -12,7 +12,7 @@ module Details.Strings.Utils(
     beforeChar,
     startsWith,) where
 
-import Details.ListUtils ( pastOffset, beforeOffset, takeWhileList )
+import Details.ListUtils ( pastOffset, beforeOffset )
 import Data.List (isPrefixOf)
 
 offsetPastTabsSpaces :: String -> Int

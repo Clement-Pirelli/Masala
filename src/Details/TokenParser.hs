@@ -3,8 +3,6 @@ module Details.TokenParser where
 import Details.Parser
 import Node
 import Token
-import Cursored(peek)
-import Data.Maybe(isJust)
 
 parseDirective :: Parser Node
 parseDirective = parseDefine `or'` parseInclude
@@ -12,8 +10,8 @@ parseDirective = parseDefine `or'` parseInclude
 parseDefine :: Parser Node
 parseDefine = do
             (tok, name) <- tdefine `followedBy` nameToSymbol
-            (spaceBefore, parameters) <- optional spaceBefore `and'` funcLike
-            let nodeParameters = spaceBefore >> parameters
+            (isSpaceBefore, parameters) <- optional spaceBefore `and'` funcLike
+            let nodeParameters = isSpaceBefore >> parameters
             return $ Node tok Define { symbol = name, params = nodeParameters, defineContents = Right [] }
             where
                 funcLike = optional $ betweenParens funcParams
@@ -30,8 +28,8 @@ includeQuotedString :: Parser NodeContents
 includeQuotedString = do
     tok <- ofType TokLiteral
     let notStrErr = "Unexpected token. Expected string literal after #include directive"
-    literal <- extractLiteral notStrErr tok
-    content <- extractContent "Expected an ordinary string after #include directive" literal
+    literal' <- extractLiteral notStrErr tok
+    content <- extractContent "Expected an ordinary string after #include directive" literal'
     return $ Include { path = content, form = QuotedInclude }
     where
         extractLiteral _ (Token TokLiteral _ (Just lit) _ _) = return lit
@@ -63,8 +61,8 @@ spaceBefore = satisfy "Expected a space before token" Token.preceededBySpace
 nameToSymbol :: Parser Node
 nameToSymbol = Parser $ \curs-> do 
     (name, next) <- parse tname curs
-    let symbol = Node name Symbol
-    return (symbol, next)
+    let symbol' = Node name Symbol
+    return (symbol', next)
 
 tname :: Parser Token
 tname = ofType TokName

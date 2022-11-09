@@ -5,7 +5,7 @@ import CursoredString(CursoredString)
 import qualified CursoredString as CursString
 import PPLiteral
 import Data.Bifunctor (second)
-import Details.Strings.Utils(offsetPastChar, pastChar, beforeChar, offsetAtStr)
+import Details.Strings.Utils(beforeChar, offsetAtStr)
 import Details.ListUtils(beforeOffset)
 import Data.Char(isDigit, chr, digitToInt)
 
@@ -23,7 +23,7 @@ scanString cs = case prefix of
     where
         prefix = find ((`isPrefixOf` xs) . fst) prefixes
         handlePrefix (str, t) = scanString (CursString.advanceChars cs (length str)) `as` t
-        as xs t = second (`withStringType` t) xs
+        as l t = second (`withStringType` t) l
         prefixes = [("u8", StrUTF8), ("u", StrUTF16), ("U", StrUTF32), ("L", StrLong)]
         xs = CursString.asScannableString cs
 
@@ -70,7 +70,6 @@ scanEscaped cs
         Just c -> Right (CursString.incrementChars cs, c)
     where
         startsWith c = first == c
-        second = head (tail xs)
         first = head xs
         xs = CursString.asScannableString cs
         escapes = [
@@ -96,4 +95,5 @@ onEscapedDigit cs = (CursString.advanceChars cs offsetPast, chr scanned)
         xs = CursString.asScannableString cs
 
 
+errorUnfinishedString :: Show a1 => a1 -> a2
 errorUnfinishedString cs = error $ "unfinished string literal at " ++ show cs

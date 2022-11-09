@@ -23,6 +23,9 @@ library:
   source-dirs: src
   dependencies: 
   - regex-tdfa
+  ghc-options:
+  - -Wall
+  - -Werror
 
 executables:
   Masala-exe:

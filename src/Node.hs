@@ -34,18 +34,18 @@ isLiteral n = case contents n of
     _ -> False
 
 defineSymbolIs :: Node -> (Node -> Bool) -> Bool
-defineSymbolIs node pred = case contents node of
-    Define symbol _ _ -> pred symbol
+defineSymbolIs node predicate = case contents node of
+    Define symbol' _ _ -> predicate symbol'
     _ -> False
 
 defineParamsAre :: Node -> (Maybe [Node] -> Bool) -> Bool
-defineParamsAre node pred = case contents node of 
-    Define _ params _ -> pred params
+defineParamsAre node predicate = case contents node of 
+    Define _ parameters _ -> predicate parameters
     _ -> False
 
 defineContentsAre :: Node -> (Either [Token] [Node] -> Bool) -> Bool
-defineContentsAre node pred = case contents node of 
-    Define _ _ contents -> pred contents
+defineContentsAre node predicate = case contents node of 
+    Define _ _ nodeContents -> predicate nodeContents
     _ -> False
     
 lexemeIs :: Node -> String -> Bool

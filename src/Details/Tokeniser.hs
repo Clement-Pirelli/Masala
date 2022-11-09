@@ -2,7 +2,7 @@ module Details.Tokeniser where
 
 import Token
 import Details.Strings.Utils
-import Data.Char(isSpace, isNumber, isLetter, isAlphaNum, isSymbol, isMark)
+import Data.Char(isSpace, isAlphaNum, isSymbol, isMark)
 import CursoredString(CursoredString)
 import qualified CursoredString as CursString
 import Data.Bifunctor(second)
@@ -85,6 +85,6 @@ scanName cs spaceBefore = if offset /= 0
         offset = pastSymbol xs
         xs = CursString.asScannableString cs
         pastSymbol [] = 0
-        pastSymbol str@(x:xs) = case atStartOf str bodyTokens of
-            Nothing -> if isAlphaNum x || isMark x || isSymbol x || x == '_' then 1 + pastSymbol xs else 0
+        pastSymbol str@(char:chars) = case atStartOf str bodyTokens of
+            Nothing -> if isAlphaNum char || isMark char || isSymbol char || char == '_' then 1 + pastSymbol chars else 0
             Just _ -> 0
