@@ -49,3 +49,22 @@ tokeniserInput =
     ++ "//stuff\n"
     ++ "\n"
     ++ "#endif\n"
+
+tokeniserShortInput :: String
+tokeniserShortInput = 
+       "#include \"myOtherPath.h\"\n"
+    ++ "#include <stddef.h>\n"
+    ++ "#include <iostream>\n"
+    ++ "\n"
+    ++ "//#define A\n"
+    ++ "#define B(a) \\\n"
+    ++ "    a-1\n"
+    ++ "\n"
+    ++ "int main()\n"
+    ++ "{\n"
+    ++ "#ifdef A\n"
+    ++ "    std::cout << B(0) << '\\n';\n"
+    ++ "#else\n"
+    ++ "    std::cout << \"A is not defined!\";\n"
+    ++ "#endif\n"    
+    ++ "}\n"

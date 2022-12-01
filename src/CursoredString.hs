@@ -9,7 +9,8 @@ module CursoredString(
     toNextLine,
     furtherThan,
     between,
-
+    charDifference,
+    
     cursor
     ) where
 
@@ -92,9 +93,14 @@ between a b = if deltaLength > 0
     else take (-deltaLength) (asScannableString b)
     where
         deltaLength = offsetOf b - offsetOf a 
-        offsetOf = Curs.character . cursor
+        
+
+charDifference :: CursoredString -> CursoredString -> Int
+charDifference a b = offsetOf b - offsetOf a
 
 --internals, perhaps add to its own Details file
+offsetOf :: CursoredString -> Int
+offsetOf = Curs.character . cursor
 
 replaceCRLF :: String -> String
 replaceCRLF ('\r':'\n':xs) = '\n': replaceCRLF xs

@@ -9,9 +9,10 @@ parseDirective = parseDefine `or'` parseInclude
 
 parseDefine :: Parser Node
 parseDefine = do
-            (tok, name) <- tdefine `followedBy` nameToSymbol
-            (isSpaceBefore, parameters) <- optional spaceBefore `and'` funcLike
-            let nodeParameters = isSpaceBefore >> parameters
+            tok <- tdefine
+            name <- nameToSymbol
+            (noSpace, parameters) <- optional noSpaceBefore `and'` funcLike
+            let nodeParameters = noSpace >> parameters
             return $ Node tok Define { symbol = name, params = nodeParameters, defineContents = Right [] }
             where
                 funcLike = optional $ betweenParens funcParams
@@ -42,10 +43,11 @@ includeChevronString = do
     let
         open = ofType TokOpeningChevron
         close = ofType TokClosingChevron
-        middle = many' $ fmap snd $ notEOF `and'` notOfType TokClosingChevron
-    toks <- surroundedBy open middle close
+    toks <- surroundedBy open (many' middle) close
     let asString = concatMap lexeme toks
     return $ Include { path = asString, form = ChevronInclude }
+    where
+        middle = validateWithThen notEOF (notOfType TokClosingChevron)
 
 ofType :: TokenType -> Parser Token
 ofType t = satisfy err ((== t) . tokenType)
@@ -55,8 +57,8 @@ notOfType :: TokenType -> Parser Token
 notOfType t = exclude err ((== t) . tokenType)
     where err = "Unexpected token while trying to avoid tokens of type " ++ show t
 
-spaceBefore :: Parser Token
-spaceBefore = satisfy "Expected a space before token" Token.preceededBySpace
+noSpaceBefore :: Parser Token
+noSpaceBefore = exclude "Expected no space before token" Token.preceededBySpace
 
 nameToSymbol :: Parser Node
 nameToSymbol = Parser $ \curs-> do 

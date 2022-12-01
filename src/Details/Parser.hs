@@ -10,7 +10,6 @@ import Data.Functor
 newtype Parser a = Parser { parse :: Cursored Token -> Either String (a, Cursored Token) }
 
 instance Monad Parser where
-  (>>=) :: Parser a -> (a -> Parser b) -> Parser b
   parser >>= f = Parser bound
     where
         bound curs = parse parser curs >>= handleF
@@ -53,12 +52,16 @@ p `and'` q = Parser $ \input -> do
     (y, after) <- parse q input
     return ((x, y), after)
 
+validateWithThen :: Parser a -> Parser b -> Parser b
+validateWithThen validator parser = do
+                _ <- peeked validator
+                parser
+
 many' :: Parser a -> Parser [a]
 many' parser = do
     x  <- parser -- apply p once
-    xs <- many' parser -- recursively apply parser as many times as possible
+    xs <- many' parser `or'` return [] -- recursively apply parser as many times as possible
     return (x:xs) 
-    `or'` return []
 
 then' :: (a -> b -> c) -> Parser a -> Parser b -> Parser c
 then' combine p q =
@@ -82,9 +85,6 @@ surroundedBy open parser close = do
     x <- parser 
     _ <- close
     return x
-
-followedBy :: Parser a -> Parser b -> Parser (a, b)
-followedBy = then' (,)
 
 optional :: Parser a -> Parser (Maybe a)
 optional parser = Parser p

@@ -5,38 +5,7 @@ import CursoredString (CursoredString)
 import qualified CursoredString as CursString
 import Details.Strings.Scanner
 import PPLiteral
-
-scan :: String -> (CursoredString, PPLiteral)
-scan xs = scanString $ CursString.newCursoredString xs
-
-stringFrom :: String -> PPLiteral
-stringFrom = snd . scan
-
-shouldScanToLit :: String -> PPLiteral -> SpecWith ()
-shouldScanToLit input expected = 
-    context ("with " ++ show input) $
-        it ("should scan to " ++ show expected) $
-            stringFrom input `shouldBe` expected
-
-makeOrdinary :: String -> PPLiteral
-makeOrdinary xs = (PPString {ppstrContents=xs, ppstrType=StrOrdinary, ppstrRaw=False})
-
-shouldScanTo :: String -> String -> SpecWith ()
-shouldScanTo input expected = shouldScanToLit input (makeOrdinary expected)
-
-shouldLeave :: String -> String -> SpecWith ()
-shouldLeave input expected = context ("with " ++ show input) $
-                                    it ("should leave " ++ show expected) $
-                                        (CursString.asScannableString . fst . scan) input `shouldBe` expected
-
-literal :: String -> String
-literal xs = '\"':xs++"\""
-
-raw :: String -> String
-raw xs = 'R':xs
-
-withPrefix :: String -> String -> String
-withPrefix xs prefix = prefix ++ xs
+import Control.Monad.State.Lazy
 
 spec :: Spec
 spec =
@@ -55,3 +24,37 @@ spec =
 
 main :: IO ()
 main = hspec spec
+
+
+
+scan :: String -> (PPLiteral, CursoredString)
+scan xs = runState scanString (CursString.newCursoredString xs)
+
+stringFrom :: String -> PPLiteral
+stringFrom = fst . scan
+
+shouldScanToLit :: String -> PPLiteral -> SpecWith ()
+shouldScanToLit input expected = 
+    context ("with " ++ show input) $
+        it ("should scan to " ++ show expected) $
+            stringFrom input `shouldBe` expected
+
+makeOrdinary :: String -> PPLiteral
+makeOrdinary xs = (PPString {ppstrContents=xs, ppstrType=StrOrdinary, ppstrRaw=False})
+
+shouldScanTo :: String -> String -> SpecWith ()
+shouldScanTo input expected = shouldScanToLit input (makeOrdinary expected)
+
+shouldLeave :: String -> String -> SpecWith ()
+shouldLeave input expected = context ("with " ++ show input) $
+                                    it ("should leave " ++ show expected) $
+                                        (CursString.asScannableString . snd . scan) input `shouldBe` expected
+
+literal :: String -> String
+literal xs = '\"':xs++"\""
+
+raw :: String -> String
+raw xs = 'R':xs
+
+withPrefix :: String -> String -> String
+withPrefix xs prefix = prefix ++ xs

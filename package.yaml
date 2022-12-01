@@ -21,7 +21,8 @@ dependencies:
 
 library:
   source-dirs: src
-  dependencies: 
+  dependencies:
+  - mtl
   - regex-tdfa
   ghc-options:
   - -Wall
@@ -49,3 +50,4 @@ tests:
     dependencies:
     - Masala
     - hspec
+    - mtl

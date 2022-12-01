@@ -5,86 +5,138 @@ import Details.Strings.Utils
 import Data.Char(isSpace, isAlphaNum, isSymbol, isMark)
 import CursoredString(CursoredString)
 import qualified CursoredString as CursString
-import Data.Bifunctor(second)
 import Details.Strings.Scanner (scanString, scannableAsStringLiteral)
 import Details.Numbers.Scanner (scannableAsIntegral, scanNumber)
-import Data.Maybe (listToMaybe)
+import Data.Maybe (listToMaybe, maybeToList)
+import Control.Monad.State.Lazy
+import Details.CursoredStringState
+
+--todo: spaceBefore flags are all wrong. Instead of manually handling it here, we should most likely keep a flag on the CursoredString you can query for
+
+scanTokens :: Bool -> State CursoredString [Token]
+scanTokens spaceBefore = do
+    cs <- get
+    xs <- asScannableString
+    let beforeDirectiveIsWhiteSpace = offsetPastSpace > 0
+        offsetPastSpace = offsetPastTabsSpaces xs
+    if CursString.noMoreChars cs then return [Token { tokenType = TokEOF, lexeme = "", literal = Nothing, cursor = CursString.cursor cs, preceededBySpace = spaceBefore }]
+    else do
+        _ <- advanceChars offsetPastSpace
+        directiveTok <- scanDirective beforeDirectiveIsWhiteSpace
+        case directiveTok of
+            Nothing -> do 
+                _ <- onNoDirective
+                scanTokens True
+            Just tok -> do
+                after <- if tokenType tok == TokInclude then afterIncludeToken else afterDirectiveToken
+                restToks <- scanTokens False
+                return (tok:after ++ restToks)
+
+onNoDirective :: State CursoredString CursoredString
+onNoDirective = do
+    cs <- get
+    if CursString.asScannableString cs `startsWith` '#' then error $ "Unrecognized preprocessor directive at " ++ show cs
+    else do
+        _ <- advanceCharsTo offsetPastEndl
+        toNextLine
+
+afterIncludeToken :: State CursoredString [Token]
+afterIncludeToken = do
+    cs <- advanceCharsTo offsetPastTabsSpaces
+    xs <- asScannableString
+    if xs `startsWith` '<'
+        then do
+            newCS <- advanceCharsTo (offsetPastChar '>')
+            return [tokenFromCursStrings cs newCS TokChevronPath False]
+    else if xs `startsWith` '\"'
+        then do 
+            newCS <- advanceCharsTo (offsetPastChar '\"')
+            let between = CursString.between cs newCS
+            return [Token { tokenType = TokLiteral, lexeme = between, literal = Just $ PPString between StrOrdinary False, cursor = CursString.cursor cs, preceededBySpace = False }]
+    else error $ "Malformed #include directive at " ++ show cs
+
+afterDirectiveToken :: State CursoredString [Token]
+afterDirectiveToken = scanDirectiveBody False
+
+scanDirective :: Bool -> State CursoredString (Maybe Token)
+scanDirective spaceBefore = state (\cs -> 
+    case scan cs of 
+        Just (cs', t) -> (Just t, cs')
+        Nothing -> (Nothing, cs)
+    )
+    where
+        scan curs = do
+            let xs = CursString.asScannableString curs
+            h <- listToMaybe xs
+            if h /= '#' then Nothing else do
+                (found, tokType) <- tail xs `atStartOf` directiveTokens
+                let len = length found + 1 -- +1 for the #
+                    newCS = CursString.advanceChars curs len
+                return (newCS, tokenFromCursStrings curs newCS tokType spaceBefore)
+
+scanDirectiveBody :: Bool -> State CursoredString [Token]
+scanDirectiveBody spaceBefore = do
+    cs <- get
+    xs <- asScannableString
+    if CursString.noMoreChars cs 
+        then return []
+        else 
+            if startsWithEndl xs 
+                then do 
+                    _ <- toNextLine
+                    return []
+                else 
+                    directiveBody spaceBefore
+
+directiveBody :: Bool -> State CursoredString [Token]
+directiveBody spaceBefore = do
+    cs <- get
+    xs <- asScannableString
+    case xs `atStartOf` bodyTokens of
+        Just (found, tokType) -> do
+            let newTokLen = length found
+            newCS <- advanceChars newTokLen
+            let newTok = tokenFromCursStrings cs newCS tokType spaceBefore
+            rest <- scanDirectiveBody False
+            return (newTok : rest)
+        Nothing -> do
+            unrecognized <- scanUnrecognizedToken spaceBefore
+            rest <- scanDirectiveBody spaceBefore
+            return $ maybeToList unrecognized ++ rest
+
+
+scanUnrecognizedToken :: Bool -> State CursoredString (Maybe Token)
+scanUnrecognizedToken spaceBefore = do
+    cs <- get
+    str <- asScannableString
+    if CursString.noMoreChars cs then error $ "Empty string passed to scanUnrecognizedToken at" ++ show cs ++ "! This should never happen!"
+    else if scannableAsIntegral str then do
+        lit <- scanNumber
+        return $ Just (Token TokLiteral "" (Just lit) (CursString.cursor cs) spaceBefore)
+    else if isSpace (head str) then do
+        _ <- incrementChars
+        return Nothing
+    else if scannableAsStringLiteral str then do
+        lit <- scanString
+        newCS <- get
+        return $ Just (tokenFromCursStrings cs newCS TokLiteral spaceBefore `withLiteral` lit)
+    else do
+        tok <- scanName spaceBefore
+        return $ Just tok --anything else is a TokSymbolName  
+
+scanName :: Bool -> State CursoredString Token
+scanName spaceBefore = do
+    cs <- get
+    newCS <- advanceCharsTo pastSymbol
+    if CursString.charDifference cs newCS /= 0
+        then return $ tokenFromCursStrings cs newCS TokName spaceBefore
+        else error $ "scanName was called on an invalid input at " ++ show cs ++ "!"
+
+pastSymbol :: [Char] -> Int
+pastSymbol [] = 0
+pastSymbol str@(char:chars) = case atStartOf str bodyTokens of
+    Nothing -> if isAlphaNum char || isMark char || isSymbol char || char == '_' then 1 + pastSymbol chars else 0
+    Just _ -> 0
 
 tokenFromCursStrings :: CursoredString -> CursoredString -> TokenType -> Bool -> Token
 tokenFromCursStrings start end tokType spaceBefore = Token { tokenType = tokType, lexeme = CursString.between start end, literal = Nothing, cursor = CursString.cursor start, preceededBySpace = spaceBefore }
-
-scanTokens :: CursoredString -> Bool -> (CursoredString, [Token])
-scanTokens cs spaceBefore
-    | CursString.noMoreChars cs = (cs, [Token { tokenType = TokEOF, lexeme = "", literal = Nothing, cursor = CursString.cursor cs, preceededBySpace = spaceBefore }])
-    | otherwise = case directiveTok of
-        Nothing -> onNoDirective directiveCursStr
-        Just (bodyStr, tok) -> second (tok :) (afterDirectiveToken bodyStr)
-        where
-            directiveTok = scanDirective directiveCursStr beforeDirectiveIsWhiteSpace
-            directiveCursStr = CursString.advanceChars cs offsetPastSpace
-            beforeDirectiveIsWhiteSpace = offsetPastSpace > 0
-            offsetPastSpace = offsetPastTabsSpaces (CursString.asScannableString cs)
-
-onNoDirective :: CursoredString -> (CursoredString, [Token])
-onNoDirective cs
-    | xs `startsWith` '#' = error $ "Unrecognized preprocessor directive at " ++ show cs
-    | otherwise = scanTokens newCS True
-    where
-        newCS = CursString.toNextLine (CursString.advanceCharsTo offsetPastEndl cs)
-        xs = CursString.asScannableString cs
-
-afterDirectiveToken :: CursoredString -> (CursoredString, [Token])
-afterDirectiveToken cs = second (bodyToks ++) restToks
-    where
-        restToks = scanTokens restStr False
-        (restStr, bodyToks) = scanDirectiveBody cs False
-
-scanDirective :: CursoredString -> Bool -> Maybe (CursoredString, Token)
-scanDirective cs spaceBefore = do
-    let xs = CursString.asScannableString cs
-    h <- listToMaybe xs
-    if h /= '#' then Nothing else do
-        (found, tokType) <- tail xs `atStartOf` directiveTokens
-        let len = length found + 1
-            newCS = CursString.advanceChars cs len
-        return (newCS, tokenFromCursStrings cs newCS tokType spaceBefore)
-
-scanDirectiveBody :: CursoredString -> Bool -> (CursoredString, [Token])
-scanDirectiveBody cs spaceBefore
-    | CursString.noMoreChars cs = (cs, [])
-    | startsWithEndl xs = (CursString.toNextLine cs, [])
-    | otherwise = case xs `atStartOf` bodyTokens of
-        Just (found, tokType) -> second (newTok :) rest
-            where
-                rest = scanDirectiveBody newCS False
-                newTok = tokenFromCursStrings cs newCS tokType spaceBefore
-                newCS = CursString.advanceChars cs newTokLen
-                newTokLen = length found
-        Nothing -> case scanUnrecognizedToken cs spaceBefore of
-            (newStr, space, Just unrTok) -> second (unrTok :) $ scanDirectiveBody newStr space
-            (newStr, space, Nothing) -> scanDirectiveBody newStr space
-    where xs = CursString.asScannableString cs
-
-scanUnrecognizedToken :: CursoredString -> Bool -> (CursoredString, Bool, Maybe Token)
-scanUnrecognizedToken cs spaceBefore
-    | CursString.noMoreChars cs = error $ "Empty string passed to scanUnrecognizedToken at" ++ show cs ++ "! This should never happen!"
-    | scannableAsIntegral str = let (newCS, lit) = scanNumber cs in (newCS, False, Just (Token TokLiteral "" (Just lit) (CursString.cursor cs) spaceBefore))
-    | isSpace firstLetter = (CursString.incrementChars cs, True, Nothing)
-    | scannableAsStringLiteral str = let (newCS, lit) = scanString cs in (newCS, False, Just (tokenFromCursStrings cs newCS TokLiteral spaceBefore `withLiteral` lit))
-    | otherwise = let (newCS, tok) = scanName cs spaceBefore in (newCS, False, return tok) --anything else is a TokSymbolName  
-    where
-        firstLetter = head str
-        str = CursString.asScannableString cs
-
-scanName :: CursoredString -> Bool -> (CursoredString, Token)
-scanName cs spaceBefore = if offset /= 0
-        then (newCS, tokenFromCursStrings cs newCS TokName spaceBefore)
-        else error $ "scanName was called on an invalid input at " ++ show cs ++ "!"
-    where
-        newCS = CursString.advanceChars cs offset
-        offset = pastSymbol xs
-        xs = CursString.asScannableString cs
-        pastSymbol [] = 0
-        pastSymbol str@(char:chars) = case atStartOf str bodyTokens of
-            Nothing -> if isAlphaNum char || isMark char || isSymbol char || char == '_' then 1 + pastSymbol chars else 0
-            Just _ -> 0
