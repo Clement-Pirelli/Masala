@@ -22,32 +22,25 @@ parseInclude :: Parser Node
 parseInclude = do
     tok <- ofType TokInclude
     content <- includeQuotedString `or'` includeChevronString
-    let parsed = Node tok content
-    return parsed
+    return $ Node tok content
 
 includeQuotedString :: Parser NodeContents
 includeQuotedString = do
     tok <- ofType TokLiteral
-    let notStrErr = "Unexpected token. Expected string literal after #include directive"
-    literal' <- extractLiteral notStrErr tok
-    content <- extractContent "Expected an ordinary string after #include directive" literal'
+    literal' <- extractLiteral tok
+    content <- extractContent literal'
     return $ Include { path = content, form = QuotedInclude }
     where
-        extractLiteral _ (Token TokLiteral _ (Just lit) _ _) = return lit
-        extractLiteral err _ = oops err
-        extractContent _ (PPString content StrOrdinary False) = return content
-        extractContent err _ = oops err
+        extractLiteral (Token TokLiteral _ (Just lit) _ _) = return lit
+        extractLiteral _ = oops "Unexpected token. Expected string literal after #include directive"
+        extractContent (PPString content StrOrdinary False) = return content
+        extractContent _ = oops "Expected an ordinary string after #include directive"
 
 includeChevronString :: Parser NodeContents
 includeChevronString = do
-    let
-        open = ofType TokOpeningChevron
-        close = ofType TokClosingChevron
-    toks <- surroundedBy open (many' middle) close
-    let asString = concatMap lexeme toks
+    tok <- ofType TokChevronPath
+    let asString = lexeme tok
     return $ Include { path = asString, form = ChevronInclude }
-    where
-        middle = validateWithThen notEOF (notOfType TokClosingChevron)
 
 ofType :: TokenType -> Parser Token
 ofType t = satisfy err ((== t) . tokenType)

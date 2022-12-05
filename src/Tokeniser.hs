@@ -6,4 +6,4 @@ import Token ( Token )
 import Control.Monad.State.Lazy
 
 scanTokens :: String -> [Token]
-scanTokens xs = evalState (Details.scanTokens False) (newCursoredString xs) 
+scanTokens xs = evalState Details.scanTokens (newCursoredString xs) 

@@ -52,7 +52,7 @@ toTypes = map tokenType
 
 bodyTokenTypes :: String -> [TokenType]
 bodyTokenTypes input = toTypes output
-    where output = evalState (DTok.scanDirectiveBody False) (newCursoredString input) 
+    where output = evalState DTok.scanDirectiveBody (newCursoredString input) 
 
 tokenTypes :: String -> [TokenType]
 tokenTypes = toTypes . scanTokens

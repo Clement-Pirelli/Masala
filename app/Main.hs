@@ -6,8 +6,7 @@ import Parser (parseTokens)
 
 main :: IO ()
 main = do
-    let toks = scanTokens tokeniserInput
-        nodes = parseTokens toks
+    let nodes = (parseTokens . scanTokens) tokeniserInput
     mapM_ print nodes
 
 
