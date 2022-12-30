@@ -181,7 +181,7 @@ singleCommentInput =
 cursoredSingleCommentInput :: String
 cursoredSingleCommentInput = 
        "#define A\n"
-    ++ "define B"
+    ++ "#define B"
 
 singleCommentInputTypes :: [TokenType]
 singleCommentInputTypes = [

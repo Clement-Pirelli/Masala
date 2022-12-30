@@ -47,7 +47,8 @@ advanceCharsTest inputStr inputOffset expected =
     context ("With contents " ++ show inputStr ++ " and offset " ++ show inputOffset) $ 
         it ("should return " ++ expected) $
             asScannableString output `shouldBe` expected
-    where output = advanceChars (newCursoredString inputStr) inputOffset
+    where
+        output = advanceChars (newCursoredString inputStr) inputOffset
 
 advanceCharsSpaceTest :: String -> Int -> Bool -> SpecWith ()
 advanceCharsSpaceTest inputStr inputOffset expected =
@@ -57,19 +58,3 @@ advanceCharsSpaceTest inputStr inputOffset expected =
     where 
         output = advanceChars (newCursoredString inputStr) inputOffset
         description = (if expected then "should" else "shouldn't") ++ " have a space before"
-
-shortInputAsScannableString = 
-       "#include \"myOtherPath.h\"\n"
-    ++ "#include <stddef.h>\n"
-    ++ "#include <iostream>\n"
-    ++ "\n"
-    ++ "#define B(a)     a-1\n"
-    ++ "\n"
-    ++ "int main()\n"
-    ++ "{\n"
-    ++ "#ifdef A\n"
-    ++ "    std::cout << B(0) << '\\n';\n"
-    ++ "#else\n"
-    ++ "    std::cout << \"A is not defined!\";\n"
-    ++ "#endif\n"
-    ++ "}\n"
