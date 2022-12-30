@@ -10,29 +10,36 @@ import CursoredString (newCursoredString)
 import Data.Maybe (catMaybes)
 import TestInputs
 import DebugUtils
+import SpecUtils
 import Control.Monad.State.Lazy
 
 spec :: Spec
 spec =
     describe "scanning tokens" $ do
-        context "with short input" $
-            it "should all have correct char number" $
-                allHaveCorrectStart tokeniserShortInput
-        context "with long input" $
-            it "should all have correct char number" $
-                allHaveCorrectStart tokeniserLongInput
-        testDirectiveTokens "/*\nHELLO_WORLD 1\n*/" []
-        testDirectiveTokens "((a+b)*c) < 5" [TokOpeningParens, TokOpeningParens, TokName, TokPlus, TokName, TokClosingParens, TokStar, TokName, TokClosingParens, TokOpeningChevron, TokLiteral]
-        testDirectiveTokens "HELLO_WORLD /*1*/" [TokName]
-        testDirectiveTokens "HELLO_WORLD //1" [TokName]
-        testDirectiveTokens "//HELLO_WORLD 1" []
-        testTokens "#include <a.h>" [TokInclude, TokChevronPath, TokEOF]
-        testTokens "#include \"a.h\"" [TokInclude, TokLiteral, TokEOF]
-        testTokens tokeniserShortInput shortInputTypes
+        let startTestMapping i = (title i, input i)
+        testAll2 startTest (map startTestMapping inputs)
+        let equationExample = ("((a+b)*c) < 5", [TokOpeningParens, TokOpeningParens, TokName, TokPlus, TokName, TokClosingParens, TokStar, TokName, TokClosingParens, TokOpeningChevron, TokLiteral])
+        testAll2 testDirectiveTokens [
+            ("/*\nHELLO_WORLD 1\n*/", []), 
+            equationExample, 
+            ("HELLO_WORLD /*1*/", [TokName]), 
+            ("HELLO_WORLD //1", [TokName]),
+            ("//HELLO_WORLD 1", [])]
+        let testTokensMapping i = (input i, expectedTypes i)
+        testAll2 testTokens $ [
+            ("#include <a.h>", [TokInclude, TokChevronPath, TokEOF]),
+            ("#include \"a.h\"", [TokInclude, TokLiteral, TokEOF])] 
+            ++ map testTokensMapping inputs
 
 main :: IO ()
 main = hspec spec
 
+startTest :: String -> String -> SpecWith ()
+startTest inputDescription input = context ("with " ++ inputDescription) $
+            it "should all have correct char number" $
+                allHaveCorrectStart input
+
+--second member of the returned tuple is a preview of the string we actually got
 tokenWithIncorrectStart :: Token -> String -> Maybe (Token, String)
 tokenWithIncorrectStart tok str = if lexm `isPrefixOf` str' then Nothing else Just (tok, take 10 str')
     where
@@ -43,8 +50,7 @@ tokenWithIncorrectStart tok str = if lexm `isPrefixOf` str' then Nothing else Ju
 allHaveCorrectStart :: String -> Expectation
 allHaveCorrectStart str = catMaybes incorrectTokens `shouldBe` []
     where
-        incorrectTokens = f toks
-        f = map (`tokenWithIncorrectStart` str)
+        incorrectTokens = map (`tokenWithIncorrectStart` str) toks
         toks = scanTokens str
 
 toTypes :: [Token] -> [TokenType]
@@ -70,19 +76,6 @@ testTokens input toks =
             tokenTypes input `shouldBe` toks
 
 --details
-
-shortInputTypes :: [TokenType]
-shortInputTypes = [
-    TokInclude, TokLiteral, 
-    TokInclude, TokChevronPath,
-    TokInclude, TokChevronPath,
-    TokDefine, TokName, TokOpeningParens, TokName, TokClosingParens,
-    TokName, TokMinus, TokLiteral,
-    TokIfdef, TokName,
-    TokElse,
-    TokEndif,
-    TokEOF
-    ]
 
 tokDescription toks
             | null toks = "shouldn't have any tokens"

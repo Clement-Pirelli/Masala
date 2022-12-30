@@ -75,6 +75,7 @@ test-suite Masala-test
       DebugUtils
       Numbers.ScannerSpec
       ParserSpec
+      SpecUtils
       Strings.ScannerSpec
       TestInputs
       TokeniserSpec
