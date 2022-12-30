@@ -24,5 +24,13 @@ advanceCharsTo f = state $ \s ->
 toNextLine :: State CursoredString CursoredString
 toNextLine = state (dup . CursString.toNextLine)
 
+eatChar :: State CursoredString (Maybe Char)
+eatChar = do
+    xs <- asScannableString
+    _ <- incrementChars
+    return (case xs of
+        (x:_) -> Just x
+        [] -> Nothing)
+
 dup :: a -> (a, a)
 dup x = (x,x)

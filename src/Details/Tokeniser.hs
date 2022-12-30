@@ -7,7 +7,7 @@ import CursoredString(CursoredString)
 import qualified CursoredString as CursString
 import Details.Strings.Scanner (scanString, scannableAsStringLiteral)
 import Details.Numbers.Scanner (scannableAsIntegral, scanNumber)
-import Data.Maybe (listToMaybe, maybeToList)
+import Data.Maybe (maybeToList)
 import Control.Monad.State.Lazy
 import Details.CursoredStringState
 
@@ -33,9 +33,9 @@ scanTokens = do
 onNoDirective :: State CursoredString CursoredString
 onNoDirective = do
     cs <- get
-    if CursString.asScannableString cs `startsWith` '#' then error $ "Unrecognized preprocessor directive at " ++ show cs
-    else do
-        toNextLine
+    if CursString.asScannableString cs `startsWith` '#' 
+        then error $ "Unrecognized preprocessor directive at " ++ show cs
+        else toNextLine
 
 afterIncludeToken :: State CursoredString [Token]
 afterIncludeToken = do
@@ -54,20 +54,19 @@ afterIncludeToken = do
     else error $ "Malformed #include directive at " ++ show cs
 
 scanDirective :: State CursoredString (Maybe Token)
-scanDirective = state (\cs -> 
-    case scan cs of 
-        Just (cs', t) -> (Just t, cs')
-        Nothing -> (Nothing, cs)
-    )
-    where
-        scan curs = do
-            let xs = CursString.asScannableString curs
-            h <- listToMaybe xs
-            if h /= '#' then Nothing else do
-                (found, tokType) <- tail xs `atStartOf` directiveTokens
-                let len = length found + 1 -- +1 for the #
-                    newCS = CursString.advanceChars curs len
-                return (newCS, tokenFromCursStrings curs newCS tokType)
+scanDirective = do
+    cs <- get
+    c <- eatChar
+    case c of
+        Just '#' -> do
+            xs <- asScannableString
+            let tok = xs `atStartOf` directiveTokens
+            case tok of 
+                Nothing -> return Nothing
+                Just (found, tokType) -> do
+                    newCS <- advanceChars (length found)
+                    return $ Just (tokenFromCursStrings cs newCS tokType)
+        _ -> return Nothing
 
 scanDirectiveBody :: State CursoredString [Token]
 scanDirectiveBody = do
