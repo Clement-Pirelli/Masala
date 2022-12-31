@@ -11,7 +11,8 @@ inputs =
         TestInput { title = "short input", input = shortInput, expectedString = cursoredShortInput, expectedTypes = shortInputTypes},
         TestInput { title = "long input", input = longInput, expectedString = cursoredLongInput, expectedTypes = longInputTypes},
         TestInput { title = "include input", input = includeInput, expectedString = cursoredIncludeInput, expectedTypes = includeInputTypes},
-        TestInput { title = "single comment input", input = singleCommentInput, expectedString = cursoredSingleCommentInput, expectedTypes = singleCommentInputTypes}
+        TestInput { title = "single comment input", input = singleCommentInput, expectedString = cursoredSingleCommentInput, expectedTypes = singleCommentInputTypes},
+        TestInput { title = "single comment start input", input = singleCommentStartInput, expectedString = cursoredSingleCommentStartInput, expectedTypes = singleCommentStartInputTypes}
     ]
 
 
@@ -185,7 +186,25 @@ cursoredSingleCommentInput =
 
 singleCommentInputTypes :: [TokenType]
 singleCommentInputTypes = [
-    TokDefine, TokName, 
-    TokDefine, TokName, 
+    TokDefine, TokName,
+    TokDefine, TokName,
+    TokEOF
+    ]
+
+singleCommentStartInput :: String
+singleCommentStartInput =
+       "//Howdy partner!\n"
+    ++ "#define A\n"
+    ++ "#define B"
+
+cursoredSingleCommentStartInput :: String
+cursoredSingleCommentStartInput = 
+       "#define A\n"
+    ++ "#define B"
+
+singleCommentStartInputTypes :: [TokenType]
+singleCommentStartInputTypes = [
+    TokDefine, TokName,
+    TokDefine, TokName,
     TokEOF
     ]

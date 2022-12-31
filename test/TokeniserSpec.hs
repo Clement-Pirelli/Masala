@@ -16,8 +16,6 @@ import Control.Monad.State.Lazy
 spec :: Spec
 spec =
     describe "scanning tokens" $ do
-        let startTestMapping i = (title i, input i)
-        testAll2 startTest (map startTestMapping inputs)
         let equationExample = ("((a+b)*c) < 5", [TokOpeningParens, TokOpeningParens, TokName, TokPlus, TokName, TokClosingParens, TokStar, TokName, TokClosingParens, TokOpeningChevron, TokLiteral])
         testAll2 testDirectiveTokens [
             ("/*\nHELLO_WORLD 1\n*/", []), 
@@ -33,25 +31,6 @@ spec =
 
 main :: IO ()
 main = hspec spec
-
-startTest :: String -> String -> SpecWith ()
-startTest inputDescription input = context ("with " ++ inputDescription) $
-            it "should all have correct char number" $
-                allHaveCorrectStart input
-
---second member of the returned tuple is a preview of the string we actually got
-tokenWithIncorrectStart :: Token -> String -> Maybe (Token, String)
-tokenWithIncorrectStart tok str = if lexm `isPrefixOf` str' then Nothing else Just (tok, take 10 str')
-    where
-        lexm = lexeme tok
-        str' = drop charOffset str
-        charOffset = character (cursor tok)
-
-allHaveCorrectStart :: String -> Expectation
-allHaveCorrectStart str = catMaybes incorrectTokens `shouldBe` []
-    where
-        incorrectTokens = map (`tokenWithIncorrectStart` str) toks
-        toks = scanTokens str
 
 toTypes :: [Token] -> [TokenType]
 toTypes = map tokenType
