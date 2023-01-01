@@ -5,7 +5,7 @@ import Node
 import Token
 
 parseDirective :: Parser Node
-parseDirective = parseDefine `or'` parseInclude
+parseDirective = parseDefine `or'` parseInclude `or'` parseIf
 
 parseDefine :: Parser Node
 parseDefine = do
@@ -17,6 +17,51 @@ parseDefine = do
             where
                 funcLike = optional $ betweenParens funcParams
                 funcParams = (nameToSymbol `separatedBy` tcomma) `or'` result []
+
+parseDefineBody :: Parser (Either [Token] [Node])
+parseDefineBody = undefined
+
+parsePPBody :: Parser Node
+parsePPBody = undefined
+
+parseIf :: Parser Node
+parseIf = do
+    (tok, expr) <- parseIfOrdinary `or'` parseIfDefined
+    ifBody <- many' parseDirective
+    elseC <- parseElse `or'` parseElseIf
+    return $ Node tok If { expression = expr, body = ifBody, elseClause = elseC }
+    where
+        parseIfOrdinary = do
+            tok <- ofType TokIf
+            ifExpr <- parsePPBody
+            return (tok, ifExpr)
+        parseIfDefined = do
+            tok <- ofType TokIfdef `or'` ofType TokIfndef
+            name <- nameToSymbol
+            return (tok, name)
+
+parseElse :: Parser (Maybe Node)
+parseElse = optional $ do
+    tok <- ofType TokElse
+    elseBody <- many' parseDirective
+    _ <- ofType TokEndif
+    return $ Node tok Else { body = elseBody }
+
+parseElseIf :: Parser (Maybe Node)
+parseElseIf = optional $ do
+    (tok, expr) <- parseElif `or'` parseElifdef
+    elseBody <- many' parseDirective
+    _ <- ofType TokEndif
+    return $ Node tok ElseIf { expression = expr, body = elseBody }
+    where
+        parseElif = do
+            tok <- ofType TokElif
+            expr <- parsePPBody
+            return (tok, expr)
+        parseElifdef = do
+            tok <- ofType TokElifdef `or'` ofType TokElifndef
+            expr <- nameToSymbol
+            return (tok, expr)
 
 parseInclude :: Parser Node
 parseInclude = do
@@ -54,10 +99,9 @@ noSpaceBefore :: Parser Token
 noSpaceBefore = exclude "Expected no space before token" Token.preceededBySpace
 
 nameToSymbol :: Parser Node
-nameToSymbol = Parser $ \curs-> do 
-    (name, next) <- parse tname curs
-    let symbol' = Node name Symbol
-    return (symbol', next)
+nameToSymbol = do 
+    tok <- tname
+    return $ Node tok Symbol
 
 tname :: Parser Token
 tname = ofType TokName
