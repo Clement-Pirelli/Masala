@@ -39,16 +39,16 @@ onNoDirective = do
 
 afterIncludeToken :: State CursoredString [Token]
 afterIncludeToken = do
-    cs <- advanceCharsTo offsetPastTabsSpaces
+    cs <- pastWhitespace
     xs <- asScannableString
     if xs `startsWith` '<'
         then do
-            newCS <- advanceCharsTo (offsetPastChar '>')
+            newCS <- pastChar '>'
             return [tokenFromCursStrings cs newCS TokChevronPath]
     else if xs `startsWith` '\"'
         then do 
             _ <- incrementChars
-            newCS <- advanceCharsTo (offsetPastChar '\"')
+            newCS <- pastChar '\"'
             let between = CursString.between cs newCS
             return [Token { tokenType = TokLiteral, lexeme = between, literal = Just $ PPString between StrOrdinary False, cursor = CursString.cursor cs, preceededBySpace = False }]
     else error $ "Malformed #include directive at " ++ show cs
@@ -71,7 +71,7 @@ scanDirective = do
 
 scanDirectiveBody :: State CursoredString [Token]
 scanDirectiveBody = do
-    cs <- advanceCharsTo offsetPastTabsSpaces
+    cs <- pastWhitespace
     xs <- asScannableString
     if CursString.noMoreChars cs || startsWithEndl xs 
         then return []

@@ -3,6 +3,7 @@ module Details.CursoredStringState where
 import qualified CursoredString as CursString
 import CursoredString(CursoredString)
 import Control.Monad.State.Lazy
+import Details.Strings.Utils
 
 asScannableString :: State CursoredString String
 asScannableString = do
@@ -23,6 +24,12 @@ advanceCharsTo f = state $ \s ->
 
 toNextLine :: State CursoredString CursoredString
 toNextLine = state (dup . CursString.toNextLine)
+
+pastChar :: Char -> State CursoredString CursoredString
+pastChar c = advanceCharsTo (offsetPastChar c)
+
+pastWhitespace :: State CursoredString CursoredString
+pastWhitespace = advanceCharsTo offsetPastTabsSpaces
 
 eatChar :: State CursoredString (Maybe Char)
 eatChar = do

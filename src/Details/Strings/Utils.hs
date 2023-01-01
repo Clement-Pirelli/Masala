@@ -8,7 +8,6 @@ module Details.Strings.Utils(
     offsetAtStr,
     offsetPastString,
     pastString,
-    pastChar,
     beforeChar,
     startsWith,) where
 
@@ -61,9 +60,6 @@ pastEndl = pastOffset offsetPastEndl
 
 pastString :: String -> String -> (Int, String)
 pastString s = pastOffset (offsetPastString s)
-
-pastChar :: Char -> String -> (Int, String)
-pastChar c = pastOffset (offsetPastChar c)
 
 beforeChar :: Char -> String -> (Int, String)
 beforeChar c = beforeOffset (offsetPastChar c)
