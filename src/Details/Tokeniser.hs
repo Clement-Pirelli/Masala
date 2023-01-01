@@ -21,14 +21,14 @@ scanTokens = do
         _ <- advanceChars offsetPastSpace
         directiveTok <- scanDirective
         case directiveTok of
-            Nothing -> do 
-                _ <- onNoDirective
-                scanTokens
             Just tok -> do
                 after <- if tokenType tok == TokInclude then afterIncludeToken else scanDirectiveBody
                 _ <- toNextLine
                 restToks <- scanTokens
                 return (tok:after ++ restToks)
+            Nothing -> do 
+                _ <- onNoDirective
+                scanTokens
 
 onNoDirective :: State CursoredString CursoredString
 onNoDirective = do
@@ -56,9 +56,10 @@ afterIncludeToken = do
 scanDirective :: State CursoredString (Maybe Token)
 scanDirective = do
     cs <- get
-    c <- eatChar
+    c <- peekChar
     case c of
         Just '#' -> do
+            _ <- incrementChars
             xs <- asScannableString
             let tok = xs `atStartOf` directiveTokens
             case tok of 

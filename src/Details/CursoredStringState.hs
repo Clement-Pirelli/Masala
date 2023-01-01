@@ -26,8 +26,13 @@ toNextLine = state (dup . CursString.toNextLine)
 
 eatChar :: State CursoredString (Maybe Char)
 eatChar = do
-    xs <- asScannableString
+    r <- peekChar
     _ <- incrementChars
+    return r
+
+peekChar :: State CursoredString (Maybe Char)
+peekChar = do
+    xs <- asScannableString
     return (case xs of
         (x:_) -> Just x
         [] -> Nothing)
