@@ -1,10 +1,8 @@
+{-# LANGUAGE InstanceSigs #-}
 module Details.Parser where
 
-import Node
 import Cursored
-import TokenType
 import Token
-import TextCursor
 import Data.Functor
 
 
@@ -36,11 +34,14 @@ item :: Parser Token
 item = Parser (Right . eat)
 
 satisfy :: String -> (Token -> Bool) -> Parser Token
-satisfy err pred = do
+satisfy err predicate = do
     x <- item
-    if pred x 
+    if predicate x 
         then return x 
         else oops err
+
+exclude :: String -> (Token -> Bool) -> Parser Token
+exclude err predicate = satisfy err (not . predicate)
 
 or' :: Parser a -> Parser a -> Parser a
 p `or'` q = Parser $ \input -> parse p input <> parse q input
@@ -51,12 +52,16 @@ p `and'` q = Parser $ \input -> do
     (y, after) <- parse q input
     return ((x, y), after)
 
+validateWithThen :: Parser a -> Parser b -> Parser b
+validateWithThen validator parser = do
+                _ <- peeked validator
+                parser
+
 many' :: Parser a -> Parser [a]
 many' parser = do
     x  <- parser -- apply p once
-    xs <- many' parser -- recursively apply parser as many times as possible
+    xs <- many' parser `or'` return [] -- recursively apply parser as many times as possible
     return (x:xs) 
-    `or'` return []
 
 then' :: (a -> b -> c) -> Parser a -> Parser b -> Parser c
 then' combine p q =
@@ -75,14 +80,11 @@ parser `separatedBy` separator = do
     return (x : xs)
 
 surroundedBy :: Parser a -> Parser b -> Parser c -> Parser b
-surroundedBy open p close = do
+surroundedBy open parser close = do
     _ <- open
-    x <- p
+    x <- parser 
     _ <- close
     return x
-
-followedBy :: Parser a -> Parser b -> Parser (a, b)
-followedBy = then' (,)
 
 optional :: Parser a -> Parser (Maybe a)
 optional parser = Parser p
@@ -95,5 +97,5 @@ peeked :: Parser a -> Parser a
 peeked parser = Parser p
     where
         p toks = do
-            (x, next) <- parse parser toks
+            (x, _) <- parse parser toks
             return (x, toks) 

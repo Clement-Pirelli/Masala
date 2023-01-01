@@ -27,6 +27,7 @@ library
   exposed-modules:
       Cursored
       CursoredString
+      Details.CursoredStringState
       Details.EitherUtils
       Details.ListUtils
       Details.Numbers.Base
@@ -47,8 +48,10 @@ library
       Paths_Masala
   hs-source-dirs:
       src
+  ghc-options: -Wall -Werror
   build-depends:
       base >=4.7 && <5
+    , mtl
     , regex-tdfa
   default-language: Haskell2010
 
@@ -69,9 +72,12 @@ test-suite Masala-test
   main-is: Spec.hs
   other-modules:
       CursoredStringSpec
+      DebugUtils
       Numbers.ScannerSpec
       ParserSpec
+      SpecUtils
       Strings.ScannerSpec
+      TestInputs
       TokeniserSpec
       Paths_Masala
   hs-source-dirs:
@@ -81,4 +87,5 @@ test-suite Masala-test
       Masala
     , base >=4.7 && <5
     , hspec
+    , mtl
   default-language: Haskell2010

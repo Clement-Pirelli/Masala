@@ -5,12 +5,7 @@ import CursoredString (CursoredString)
 import qualified CursoredString as CursString
 import Details.Numbers.Scanner
 import PPLiteral
-
-numberFrom :: String -> PPLiteral 
-numberFrom xs = snd (scanNumber $ CursString.newCursoredString xs)
-
-numberTest :: [Char] -> PPLiteral -> SpecWith ()
-numberTest xs lit = context ("with " ++ xs) (it ("should return " ++ show lit) (numberFrom xs `shouldBe` lit))
+import Control.Monad.State.Lazy
 
 spec :: Spec
 spec =
@@ -22,3 +17,10 @@ spec =
 
 main :: IO ()
 main = hspec spec
+
+
+numberFrom :: String -> PPLiteral 
+numberFrom xs = evalState scanNumber (CursString.newCursoredString xs)
+
+numberTest :: [Char] -> PPLiteral -> SpecWith ()
+numberTest xs lit = context ("with " ++ xs) (it ("should return " ++ show lit) (numberFrom xs `shouldBe` lit))

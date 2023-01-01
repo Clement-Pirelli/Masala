@@ -8,8 +8,8 @@ takeWhileList f whole@(x:xs)
 takeWhileList _ [] = []
 
 offsetPastSublist :: (Eq a) => [a] -> [a] -> Int
-offsetPastSublist [] xs = 0
-offsetPastSublist l@(e:s) xs = if xs `isPrefixOf` l then length xs else 1 + offsetPastSublist s xs 
+offsetPastSublist [] _ = 0
+offsetPastSublist l@(_:s) xs = if xs `isPrefixOf` l then length xs else 1 + offsetPastSublist s xs 
 
 pastOffset :: ([a] -> Int) -> [a] -> (Int, [a])
 pastOffset = tupWithOffsetFunc drop

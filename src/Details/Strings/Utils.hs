@@ -8,11 +8,10 @@ module Details.Strings.Utils(
     offsetAtStr,
     offsetPastString,
     pastString,
-    pastChar,
     beforeChar,
     startsWith,) where
 
-import Details.ListUtils ( pastOffset, beforeOffset, takeWhileList )
+import Details.ListUtils ( pastOffset, beforeOffset )
 import Data.List (isPrefixOf)
 
 offsetPastTabsSpaces :: String -> Int
@@ -61,9 +60,6 @@ pastEndl = pastOffset offsetPastEndl
 
 pastString :: String -> String -> (Int, String)
 pastString s = pastOffset (offsetPastString s)
-
-pastChar :: Char -> String -> (Int, String)
-pastChar c = pastOffset (offsetPastChar c)
 
 beforeChar :: Char -> String -> (Int, String)
 beforeChar c = beforeOffset (offsetPastChar c)

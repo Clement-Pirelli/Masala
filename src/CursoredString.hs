@@ -9,8 +9,10 @@ module CursoredString(
     toNextLine,
     furtherThan,
     between,
-
-    cursor
+    charDifference,
+    
+    cursor,
+    spaceBefore
     ) where
 
 import TextCursor as Curs
@@ -19,11 +21,12 @@ import Data.List(isPrefixOf)
 
 data CursoredString = CursoredString {
     contents :: String,
-    cursor :: Curs.TextCursor
+    cursor :: Curs.TextCursor,
+    spaceBefore :: Bool
     } deriving(Show, Eq)
 
 newCursoredString :: String -> CursoredString
-newCursoredString str = CursoredString str Curs.zero
+newCursoredString str = CursoredString str Curs.zero False
 
 asScannableString :: CursoredString -> String
 asScannableString cs = replaceCRLF $ removeAllMultiComments $ removeAllSingleComments $ removeAllEscapedLines (contents cs)
@@ -43,7 +46,7 @@ noMoreChars :: CursoredString -> Bool
 noMoreChars = null . asScannableString
 
 advanceChars :: CursoredString -> Int -> CursoredString
-advanceChars cs@(CursoredString str curs) currOffset
+advanceChars cs@(CursoredString str _ _) currOffset
     | currOffset <= 0 = cs
     | startsWithMultiComment str = 
         handleMultiComment cs currOffset
@@ -57,13 +60,15 @@ advanceChars cs@(CursoredString str curs) currOffset
         mightStartWithEscapedLine = str `startsWith` '\\'
 
 --doesn't support \ in multiline comment, will give wrong line number if in the body or break if in \* or *\, e.g. *\n\
-handleMultiComment cs@(CursoredString str _) currOffset = 
+handleMultiComment :: CursoredString -> Int -> CursoredString
+handleMultiComment cs@(CursoredString str _ _) currOffset = 
     CursoredString.addLine lineCount $ advanceBy cs charOffset currOffset
     where
         lineCount = (length . lines) beforeEnd
         (charOffset, beforeEnd) = pastString "*/" str
 
-handleEscapedLine cs@(CursoredString str curs) currOffset 
+handleEscapedLine :: CursoredString -> Int -> CursoredString
+handleEscapedLine cs@(CursoredString str _ _) currOffset 
     | startsWithEndl strPastSpaces = advanceBy cs (1 + offsetTotal) currOffset --keep going past escaped line, ignoring it
     | otherwise = advanceByOne cs currOffset
     where
@@ -82,7 +87,7 @@ toNextLine :: CursoredString -> CursoredString
 toNextLine = advanceCharsTo offsetPastEndl
 
 furtherThan :: CursoredString -> CursoredString -> Bool
-furtherThan (CursoredString _ (TextCursor _ a)) (CursoredString _ (TextCursor _ b)) = a > b
+furtherThan (CursoredString _ (TextCursor _ a) _) (CursoredString _ (TextCursor _ b) _) = a > b
 
 between :: CursoredString -> CursoredString -> String
 between a b = if deltaLength > 0 
@@ -90,9 +95,14 @@ between a b = if deltaLength > 0
     else take (-deltaLength) (asScannableString b)
     where
         deltaLength = offsetOf b - offsetOf a 
-        offsetOf = Curs.character . cursor
+        
+
+charDifference :: CursoredString -> CursoredString -> Int
+charDifference a b = offsetOf b - offsetOf a
 
 --internals, perhaps add to its own Details file
+offsetOf :: CursoredString -> Int
+offsetOf = Curs.character . cursor
 
 replaceCRLF :: String -> String
 replaceCRLF ('\r':'\n':xs) = '\n': replaceCRLF xs
@@ -112,15 +122,28 @@ splitOnEscapedLine (x:xs)
             passthrough = let (before, after) = splitOnEscapedLine xs in (x:before, after)
 
 incrementLine :: CursoredString -> CursoredString
-incrementLine (CursoredString xs curs) = CursoredString { contents = xs, cursor = Curs.incrementLine curs }
+incrementLine (CursoredString xs curs s) = CursoredString { contents = xs, cursor = Curs.incrementLine curs, spaceBefore = s }
 
 addLine :: Int -> CursoredString -> CursoredString
-addLine i (CursoredString xs curs) = CursoredString { contents = xs, cursor = Curs.addLine curs i }
+addLine i (CursoredString xs curs s) = CursoredString { contents = xs, cursor = Curs.addLine curs i, spaceBefore = s }
 
 
-advanceByOne cs oldOffset = advanceBy cs 1 (oldOffset - 1) 
-advanceBy (CursoredString s c) contentsToDrop = 
-    advanceChars (CursoredString { contents = drop contentsToDrop s, cursor = Curs.addChar c contentsToDrop })
+advanceByOne :: CursoredString -> Int -> CursoredString
+advanceByOne cs oldOffset = advanceBy cs 1 (oldOffset - 1)
 
+advanceBy :: CursoredString -> Int -> Int -> CursoredString
+advanceBy cs@(CursoredString s c _) contentsToDrop 
+    | contentsToDrop == 0 = advanceChars cs 
+    | otherwise = advanceChars (CursoredString { contents = dropped, cursor = Curs.addChar c contentsToDrop, spaceBefore = space })
+    where
+        space = case rightBeforeDropped of
+            (x:_) -> x == ' '
+            _ -> False
+        dropped = drop 1 rightBeforeDropped
+        rightBeforeDropped = drop (contentsToDrop - 1) s 
+
+startsWithMultiComment :: [Char] -> Bool
 startsWithMultiComment = ("/*" `isPrefixOf`)
+
+startsWithSingleComment :: [Char] -> Bool
 startsWithSingleComment = ("//" `isPrefixOf`)

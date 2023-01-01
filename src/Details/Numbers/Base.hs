@@ -1,6 +1,6 @@
 module Details.Numbers.Base where
 
-import Data.Char (digitToInt, intToDigit, toUpper)
+import Data.Char (intToDigit, toUpper)
 
 newtype Base = Base Int
 

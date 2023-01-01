@@ -10,6 +10,7 @@ data TokenType =
     | TokUndef
     | TokPragma
     | TokName
+    | TokChevronPath --bit of a hack for #include <stuff> to work nicely
     | TokInclude
     | TokEquals
     --Unary operators
