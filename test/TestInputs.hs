@@ -151,6 +151,7 @@ longInputTypes = [
     TokIf, TokName, TokOpeningParens, TokName, TokClosingParens,
     TokElse,
     TokEndif,
+    TokEndif,
     TokEOF
     ]
 
