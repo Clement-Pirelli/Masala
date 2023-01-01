@@ -3,7 +3,10 @@ module TokenType where
 data TokenType = 
       TokIf
     | TokElif
+    | TokElifdef
+    | TokElifndef
     | TokIfdef
+    | TokIfndef
     | TokElse
     | TokEndif
     | TokDefine

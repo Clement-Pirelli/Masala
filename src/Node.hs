@@ -3,15 +3,14 @@ module Node where
 import Token
 
 data IncludeForm = QuotedInclude | ChevronInclude deriving(Show, Eq)
-data IfType = OrdinaryIf | Ifdef | Ifndef deriving(Show, Eq)
 data BinaryOpType = Concatenate | Multiply | Divide | Xor | And | Or | BitAnd | BitOr | GreaterThan | LessThan | EqualTo | GreaterThanEqual | LessThanEqual | NotEqual deriving(Show, Eq)
 data UnaryOpType = Stringify | Not | BitNot | Minus | Plus deriving(Show, Eq)
 
 data NodeContents = 
       UnaryOp { op :: Node, unaryOpType :: UnaryOpType } 
     | BinaryOp { left :: Node, right :: Node, binaryOpType :: BinaryOpType}
-    | If { expression :: Node, body :: [Node], ifType :: IfType, elseClause :: Maybe Node }
-    | Elif { expression :: Node, body :: [Node] }
+    | If { expression :: Node, body :: [Node], elseClause :: Maybe Node }
+    | ElseIf { expression :: Node, body :: [Node] }
     | Else { body :: [Node] }
     | Include { path :: String, form :: IncludeForm }
     | Pragma [Node]
