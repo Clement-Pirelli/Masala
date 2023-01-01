@@ -1,4 +1,4 @@
-module Details.TokenParser where
+module Details.TokenParser(parseDirective, ofType) where
 
 import Details.Parser
 import Node
@@ -12,17 +12,23 @@ parseDefine = do
             tok <- tdefine
             name <- nameToSymbol
             (noSpace, parameters) <- optional noSpaceBefore `and'` funcLike
+            defineBody <- parseDefineBody
             let nodeParameters = noSpace >> parameters
-            return $ Node tok Define { symbol = name, params = nodeParameters, defineContents = Right [] }
+            return $ Node tok Define { symbol = name, params = nodeParameters, defineContents = defineBody }
             where
                 funcLike = optional $ betweenParens funcParams
                 funcParams = (nameToSymbol `separatedBy` tcomma) `or'` result []
 
 parseDefineBody :: Parser (Either [Token] [Node])
-parseDefineBody = undefined
+parseDefineBody = do
+    nodes <- many' parsePPBody
+    if null nodes then
+        Left <$> tokensToNextDirective
+    else
+        return $ Right nodes
 
 parsePPBody :: Parser Node
-parsePPBody = undefined
+parsePPBody = oops "undefined!"
 
 parseIf :: Parser Node
 parseIf = do
@@ -91,9 +97,10 @@ ofType :: TokenType -> Parser Token
 ofType t = satisfy err ((== t) . tokenType)
     where err = "Unexpected token while trying to match token of type " ++ show t
 
-notOfType :: TokenType -> Parser Token
-notOfType t = exclude err ((== t) . tokenType)
-    where err = "Unexpected token while trying to avoid tokens of type " ++ show t
+--todo: use or remove this
+--notOfType :: TokenType -> Parser Token
+--notOfType t = exclude err ((== t) . tokenType)
+--    where err = "Unexpected token while trying to avoid tokens of type " ++ show t
 
 noSpaceBefore :: Parser Token
 noSpaceBefore = exclude "Expected no space before token" Token.preceededBySpace
@@ -115,7 +122,8 @@ tdefine = ofType TokDefine
 betweenParens :: Parser b -> Parser b
 betweenParens parser = surroundedBy (ofType TokOpeningParens) parser (ofType TokClosingParens)
 
-notEOF :: Parser Token
-notEOF = exclude "Unexpected end of file" isEOF
+tokensToNextDirective :: Parser [Token]
+tokensToNextDirective = many' $ satisfy "" notDirective --error message will not be used here, many' will just return nothing if there's a directive right after
     where
-        isEOF t = tokenType t == TokEOF
+        notDirective tok = tokenType tok `notElem` directiveTypes 
+        directiveTypes = map snd directiveTokens

@@ -23,6 +23,7 @@ spec =
             shouldMatchWith "#include \"a.h\"" (include QuotedInclude "a.h") "an ordinary include whose path is \"a.h\""
             shouldMatchWith "#include <a.h>" (include ChevronInclude "a.h") "a chevron include whose path is \"a.h\""
             shouldError "#define"
+            shouldError "#if"
 
 main :: IO ()
 main = hspec spec
