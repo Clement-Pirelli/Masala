@@ -47,10 +47,10 @@ or' :: Parser a -> Parser a -> Parser a
 p `or'` q = Parser $ \input -> parse p input <> parse q input
 
 and' :: Parser a -> Parser b -> Parser (a, b)
-p `and'` q = Parser $ \input -> do
-    (x, _) <- parse p input
-    (y, after) <- parse q input
-    return ((x, y), after)
+p `and'` q = do
+    x <- peeked p
+    y <- q
+    return (x, y)
 
 validateWithThen :: Parser a -> Parser b -> Parser b
 validateWithThen validator parser = do
