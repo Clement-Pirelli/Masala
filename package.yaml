@@ -21,12 +21,13 @@ dependencies:
 
 library:
   source-dirs: src
-  dependencies:
-  - mtl
-  - regex-tdfa
   ghc-options:
   - -Wall
   - -Werror
+  dependencies:
+  - mtl
+  - regex-tdfa
+  - pretty-simple
 
 executables:
   Masala-exe:
@@ -38,6 +39,7 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - Masala
+    - pretty-simple
 
 tests:
   Masala-test:
@@ -51,3 +53,4 @@ tests:
     - Masala
     - hspec
     - mtl
+    - pretty-simple

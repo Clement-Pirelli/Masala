@@ -2,12 +2,13 @@ module Main where
 
 import Tokeniser (scanTokens)
 import Parser (parseTokens)
+import Text.Pretty.Simple(pPrint)
 
 
 main :: IO ()
 main = do
-    let nodes = (parseTokens . scanTokens) tokeniserInput
-    mapM_ print nodes
+    let nodes = (parseTokens . scanTokens) "#define A"
+    pPrint nodes
 
 
 
