@@ -1,10 +1,9 @@
-{-# LANGUAGE InstanceSigs #-}
 module Details.Parser where
 
-import Cursored
-import Token
-import Data.Bifunctor
-
+import Cursored ( eat, peek, Cursored )
+import Token ( Token )
+import Data.Bifunctor ( Bifunctor(first) )
+import Data.Maybe(fromMaybe)
 
 -- mostly taken from https://injuly.in/blog/monparsing/
 newtype Parser a = Parser { parse :: Cursored Token -> Either String (a, Cursored Token) }
@@ -59,6 +58,11 @@ validateWithThen :: Parser a -> Parser b -> Parser b
 validateWithThen validator parser = do
                 _ <- peeked validator
                 parser
+
+zeroOrMore :: Parser a -> Parser [a]
+zeroOrMore parser = do
+    mxs <- optional $ many' parser
+    return $ fromMaybe [] mxs
 
 many' :: Parser a -> Parser [a]
 many' parser = do

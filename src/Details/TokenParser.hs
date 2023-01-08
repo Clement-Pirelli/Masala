@@ -28,17 +28,18 @@ parseDefineBody = do
         return $ Right nodes
 
 parseDefineBody' :: Parser [Node]
-parseDefineBody' = return []--fmap (:[]) parseIfBody
+parseDefineBody' = do
+    maybeBody <- optional parseIfBody
+    case maybeBody of
+      Nothing -> return []
+      Just n -> return [n]
+        
 
 parseIfBody :: Parser Node
 parseIfBody = parseSymbolOrNumber
 
 parseSymbolOrNumber :: Parser Node
-parseSymbolOrNumber = do 
-    symbol' <- optional nameToSymbol
-    case symbol' of
-        Just s -> return s
-        Nothing -> parseInt
+parseSymbolOrNumber = nameToSymbol <|> parseInt
 
 parseInt :: Parser Node
 parseInt = do
@@ -145,7 +146,7 @@ betweenParens :: Parser b -> Parser b
 betweenParens parser = surroundedBy (ofType TokOpeningParens) parser (ofType TokClosingParens)
 
 tokensToNextDirective :: Parser [Token]
-tokensToNextDirective = many' $ satisfy "" notDirective --error message will not be used here, many' will just return nothing if there's a directive right after
+tokensToNextDirective = zeroOrMore $ satisfy "" notDirective --error message will not be used here, zeroOrMore will return an empty list on failure
     where
         notDirective tok = tokenType tok `notElem` directiveTypes 
         directiveTypes = TokEOF : map snd directiveTokens
