@@ -1,11 +1,11 @@
-module Details.TokenParser(parseDirective, ofType) where
+module Details.TokenParser where
 
 import Details.Parser
 import Node
 import Token
 
 parseDirective :: Parser Node
-parseDirective = parseDefine `or'` parseInclude `or'` parseIf
+parseDirective = parseDefine <|> parseInclude <|> parseIf
 
 parseDefine :: Parser Node
 parseDefine = do
@@ -14,35 +14,54 @@ parseDefine = do
             (noSpace, parameters) <- optional noSpaceBefore `and'` funcLike
             defineBody <- parseDefineBody
             let nodeParameters = noSpace >> parameters
-            return $ Node tok Define { symbol = name, params = nodeParameters, defineContents = defineBody }
+            makeNode tok Define { symbol = name, params = nodeParameters, defineContents = defineBody }
             where
                 funcLike = optional $ betweenParens funcParams
-                funcParams = (nameToSymbol `separatedBy` tcomma) `or'` result []
+                funcParams = (nameToSymbol `separatedBy` tcomma) <|> result []
 
 parseDefineBody :: Parser (Either [Token] [Node])
 parseDefineBody = do
-    nodes <- many' parsePPBody
+    nodes <- parseDefineBody'
     if null nodes then
         Left <$> tokensToNextDirective
     else
         return $ Right nodes
 
-parsePPBody :: Parser Node
-parsePPBody = oops "undefined!"
+parseDefineBody' :: Parser [Node]
+parseDefineBody' = return []--fmap (:[]) parseIfBody
+
+parseIfBody :: Parser Node
+parseIfBody = parseSymbolOrNumber
+
+parseSymbolOrNumber :: Parser Node
+parseSymbolOrNumber = do 
+    symbol' <- optional nameToSymbol
+    case symbol' of
+        Just s -> return s
+        Nothing -> parseInt
+
+parseInt :: Parser Node
+parseInt = do
+    tok <- ofType TokLiteral
+    case literal tok of
+        Just l -> case l of
+            PPInt _ -> makeNode tok Literal
+            _ -> oops "Unexpected type of literal, expected integer"
+        _ -> error "Literal token did not have a literal. This should never happen :'("
 
 parseIf :: Parser Node
 parseIf = do
-    (tok, expr) <- parseIfOrdinary `or'` parseIfDefined
+    (tok, expr) <- parseIfOrdinary <|> parseIfDefined
     ifBody <- many' parseDirective
-    elseC <- parseElse `or'` parseElseIf
-    return $ Node tok If { expression = expr, body = ifBody, elseClause = elseC }
+    elseC <- parseElse <|> parseElseIf
+    makeNode tok If { expression = expr, body = ifBody, elseClause = elseC }
     where
         parseIfOrdinary = do
             tok <- ofType TokIf
-            ifExpr <- parsePPBody
+            ifExpr <- parseIfBody
             return (tok, ifExpr)
         parseIfDefined = do
-            tok <- ofType TokIfdef `or'` ofType TokIfndef
+            tok <- ofType TokIfdef <|> ofType TokIfndef
             name <- nameToSymbol
             return (tok, name)
 
@@ -51,21 +70,21 @@ parseElse = optional $ do
     tok <- ofType TokElse
     elseBody <- many' parseDirective
     _ <- ofType TokEndif
-    return $ Node tok Else { body = elseBody }
+    makeNode tok Else { body = elseBody }
 
 parseElseIf :: Parser (Maybe Node)
 parseElseIf = optional $ do
-    (tok, expr) <- parseElif `or'` parseElifdef
+    (tok, expr) <- parseElif <|> parseElifdef
     elseBody <- many' parseDirective
     _ <- ofType TokEndif
-    return $ Node tok ElseIf { expression = expr, body = elseBody }
+    makeNode tok ElseIf { expression = expr, body = elseBody }
     where
         parseElif = do
             tok <- ofType TokElif
-            expr <- parsePPBody
+            expr <- parseIfBody
             return (tok, expr)
         parseElifdef = do
-            tok <- ofType TokElifdef `or'` ofType TokElifndef
+            tok <- ofType TokElifdef <|> ofType TokElifndef
             expr <- nameToSymbol
             return (tok, expr)
 
@@ -73,7 +92,7 @@ parseInclude :: Parser Node
 parseInclude = do
     tok <- ofType TokInclude
     content <- includeQuotedString `or'` includeChevronString
-    return $ Node tok content
+    makeNode tok content
 
 includeQuotedString :: Parser NodeContents
 includeQuotedString = do
@@ -119,6 +138,9 @@ tcomma = ofType TokComma
 tdefine :: Parser Token
 tdefine = ofType TokDefine
 
+makeNode :: Token -> NodeContents -> Parser Node
+makeNode tok c = pure $ Node tok c
+
 betweenParens :: Parser b -> Parser b
 betweenParens parser = surroundedBy (ofType TokOpeningParens) parser (ofType TokClosingParens)
 
@@ -126,4 +148,4 @@ tokensToNextDirective :: Parser [Token]
 tokensToNextDirective = many' $ satisfy "" notDirective --error message will not be used here, many' will just return nothing if there's a directive right after
     where
         notDirective tok = tokenType tok `notElem` directiveTypes 
-        directiveTypes = map snd directiveTokens
+        directiveTypes = TokEOF : map snd directiveTokens

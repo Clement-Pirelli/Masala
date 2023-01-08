@@ -3,7 +3,7 @@ module Details.Parser where
 
 import Cursored
 import Token
-import Data.Functor
+import Data.Bifunctor
 
 
 -- mostly taken from https://injuly.in/blog/monparsing/
@@ -19,10 +19,16 @@ instance Monad Parser where
 
 instance Applicative Parser where
     pure = return
-    pf <*> pa = pf >>= (pa <&>)
+    p1 <*> p2 = Parser $ \inp -> do
+      (f, inp') <- parse p1 inp
+      (a, inp'') <- parse p2 inp'
+      return (f a, inp'')
 
 instance Functor Parser where
-    fmap f p = p <&> f 
+    fmap f p = Parser (fmap (first f) . parse p) 
+
+(<|>) :: Parser a -> Parser a -> Parser a
+p <|> q = Parser $ \input -> parse p input <> parse q input
 
 result :: a -> Parser a
 result = return
@@ -43,9 +49,6 @@ satisfy err predicate = do
 exclude :: String -> (Token -> Bool) -> Parser Token
 exclude err predicate = satisfy err (not . predicate)
 
-or' :: Parser a -> Parser a -> Parser a
-p `or'` q = Parser $ \input -> parse p input <> parse q input
-
 and' :: Parser a -> Parser b -> Parser (a, b)
 p `and'` q = do
     x <- peeked p
@@ -60,7 +63,7 @@ validateWithThen validator parser = do
 many' :: Parser a -> Parser [a]
 many' parser = do
     x  <- parser -- apply p once
-    xs <- many' parser `or'` return [] -- recursively apply parser as many times as possible
+    xs <- many' parser <|> return [] -- recursively apply parser as many times as possible
     return (x:xs) 
 
 then' :: (a -> b -> c) -> Parser a -> Parser b -> Parser c
