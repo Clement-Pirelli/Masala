@@ -91,7 +91,7 @@ parseElseIf = optional $ do
 parseInclude :: Parser Node
 parseInclude = do
     tok <- ofType TokInclude
-    content <- includeQuotedString `or'` includeChevronString
+    content <- includeQuotedString <|> includeChevronString
     makeNode tok content
 
 includeQuotedString :: Parser NodeContents
