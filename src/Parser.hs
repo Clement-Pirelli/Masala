@@ -19,8 +19,8 @@ parseTokensLenient toks = fmap fst parsed
 
 parser :: Parser [Node]
 parser = do 
-    isEOF <- optional $ ofType TokEOF
-    if isJust isEOF 
+    eof <- optional $ peeked $ ofType TokEOF
+    if isJust eof
         then return []
         else do
             dir <- parseDirective
