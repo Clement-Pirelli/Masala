@@ -30,6 +30,7 @@ library
       Details.CursoredStringState
       Details.EitherUtils
       Details.ListUtils
+      Details.MaybeUtils
       Details.Numbers.Base
       Details.Numbers.Scanner
       Details.Parser

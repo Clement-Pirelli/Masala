@@ -13,3 +13,9 @@ testAll2 = traverse_ . uncurry
 testAll3 :: (a -> b -> c -> SpecWith d) -> [(a, b, c)] -> SpecWith d
 testAll3 = traverse_ . uncurry3
     where uncurry3 f (x, y, z) = f x y z
+
+success :: Expectation
+success = True `shouldBe` True
+
+failure :: String -> Expectation
+failure = expectationFailure

@@ -29,6 +29,9 @@ instance Functor Parser where
 (<|>) :: Parser a -> Parser a -> Parser a
 p <|> q = Parser $ \input -> parse p input <> parse q input
 
+firstOf :: String -> [Parser a] -> Parser a
+firstOf err = foldr (<|>) (oops err) --return the first that succeeds or error
+
 result :: a -> Parser a
 result = return
 
@@ -78,6 +81,15 @@ then' combine p q =
 
 thenList :: Parser a -> Parser [a] -> Parser [a]
 thenList = then' (:)
+
+chainl1 :: Parser a -> Parser (a -> a -> a) -> Parser a
+p `chainl1` op = do
+  _1st <- p
+  rest <- many' $ do
+    f    <- op
+    term <- p
+    return (f, term)
+  return $ foldl (\x (f, y) -> f x y) _1st rest
 
 -- Accept a list of sequences forming an `a`, separated by sequences forming a `b`.
 separatedBy :: Parser a -> Parser b -> Parser [a]

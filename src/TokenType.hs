@@ -17,10 +17,10 @@ data TokenType =
     | TokInclude
     | TokEquals
     --Unary operators
-    | TokNot | TokPlus | TokMinus | TokStar | TokHash
+    | TokNot | TokPlus | TokMinus | TokStar | TokPercent | TokHash | TokShiftLeft | TokShiftRight
     --Binary operators
     | TokIsEqual | TokAnd | TokOr | TokNotEqual | TokGreaterEqual | TokLesserEqual 
-    | TokBitAnd | TokBitOr | TokXor | TokHashHash | TokSlash
+    | TokBitNot | TokBitAnd | TokBitOr | TokXor | TokHashHash | TokSlash
     --Blocks
     | TokOpeningParens | TokClosingParens | TokOpeningChevron | TokClosingChevron | TokOpeningBrace | TokClosingBrace | TokOpeningBracket | TokClosingBracket
     | TokDot

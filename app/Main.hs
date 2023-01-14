@@ -7,7 +7,7 @@ import Text.Pretty.Simple(pPrint)
 
 main :: IO ()
 main = do
-    let nodes = (parseTokens . scanTokens) "#define A"
+    let nodes = (parseTokens . scanTokens) "#define A B+C"
     pPrint nodes
 
 

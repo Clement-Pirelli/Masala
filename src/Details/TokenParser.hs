@@ -5,7 +5,7 @@ import Node
 import Token
 
 parseDirective :: Parser Node
-parseDirective = parseDefine <|> parseInclude <|> parseIf
+parseDirective = parseDefine <|> parseInclude <|> parseIf <|> oops "Ran out of parsers"
 
 parseDefine :: Parser Node
 parseDefine = do
@@ -19,27 +19,42 @@ parseDefine = do
                 funcLike = optional $ betweenParens funcParams
                 funcParams = (nameToSymbol `separatedBy` tcomma) <|> result []
 
-parseDefineBody :: Parser (Either [Token] [Node])
+parseDefineBody :: Parser (Either [Token] Node)
 parseDefineBody = do
-    nodes <- parseDefineBody'
-    if null nodes then
-        Left <$> tokensToNextDirective
-    else
-        return $ Right nodes
+    expr <- optional parseExpr
+    case expr of 
+      Nothing -> Left <$> tokensToNextDirective
+      Just e -> return $ Right e
 
-parseDefineBody' :: Parser [Node]
-parseDefineBody' = do
-    maybeBody <- optional parseIfBody
-    case maybeBody of
-      Nothing -> return []
-      Just n -> return [n]
-        
+parseExpr :: Parser Node
+parseExpr = parseBinaryOp <|> parseAtomicExpr 
 
-parseIfBody :: Parser Node
-parseIfBody = parseSymbolOrNumber
+parseAtomicExpr :: Parser Node
+parseAtomicExpr = parseUnaryOp <|> parseSimpleExpr
 
-parseSymbolOrNumber :: Parser Node
-parseSymbolOrNumber = nameToSymbol <|> parseInt
+parseSimpleExpr :: Parser Node
+parseSimpleExpr = parseInt <|> nameToSymbol <|> betweenParens parseExpr
+
+parseUnaryOp :: Parser Node
+parseUnaryOp = do
+    (x, opType) <- firstOf "Unrecognized unary operator" (fmap parseOperator tokensToUnaryOps) --just linear search should be fine
+    op <- parseSimpleExpr
+    makeNode x UnaryOp {operand = op, unaryOpType = opType}
+    where
+        parseOperator (t, op) = do
+            x <- ofType t
+            return (x, op)
+
+parseBinaryOp :: Parser Node
+parseBinaryOp = parseBinaryOp' tokensToBinaryOps
+
+parseBinaryOp' ::  [(TokenType, BinaryOpType)] -> Parser Node
+parseBinaryOp' [] = parseAtomicExpr
+parseBinaryOp' ((tokType, binType):rest) = chainl1 (parseBinaryOp' rest) thisOp
+    where
+        thisOp = do 
+            tok <- ofType tokType
+            return (\l r -> Node tok BinaryOp { left = l, right = r, binaryOpType = binType } )
 
 parseInt :: Parser Node
 parseInt = do
@@ -53,13 +68,13 @@ parseInt = do
 parseIf :: Parser Node
 parseIf = do
     (tok, expr) <- parseIfOrdinary <|> parseIfDefined
-    ifBody <- many' parseDirective
+    ifBody <- zeroOrMore parseDirective
     elseC <- parseElse <|> parseElseIf
     makeNode tok If { expression = expr, body = ifBody, elseClause = elseC }
     where
         parseIfOrdinary = do
             tok <- ofType TokIf
-            ifExpr <- parseIfBody
+            ifExpr <- parseExpr
             return (tok, ifExpr)
         parseIfDefined = do
             tok <- ofType TokIfdef <|> ofType TokIfndef
@@ -69,20 +84,20 @@ parseIf = do
 parseElse :: Parser (Maybe Node)
 parseElse = optional $ do
     tok <- ofType TokElse
-    elseBody <- many' parseDirective
+    elseBody <- zeroOrMore parseDirective
     _ <- ofType TokEndif
     makeNode tok Else { body = elseBody }
 
 parseElseIf :: Parser (Maybe Node)
 parseElseIf = optional $ do
     (tok, expr) <- parseElif <|> parseElifdef
-    elseBody <- many' parseDirective
+    elseBody <- zeroOrMore parseDirective
     _ <- ofType TokEndif
     makeNode tok ElseIf { expression = expr, body = elseBody }
     where
         parseElif = do
             tok <- ofType TokElif
-            expr <- parseIfBody
+            expr <- parseExpr
             return (tok, expr)
         parseElifdef = do
             tok <- ofType TokElifdef <|> ofType TokElifndef
