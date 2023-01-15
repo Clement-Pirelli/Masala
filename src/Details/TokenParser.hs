@@ -5,7 +5,7 @@ import Node
 import Token
 
 parseDirective :: Parser Node
-parseDirective = parseDefine <|> parseInclude <|> parseIf <|> oops "Ran out of parsers"
+parseDirective = parseDefine <|> parseInclude <|> parseIf <|> oops "Ran out of parsers "
 
 parseDefine :: Parser Node
 parseDefine = do
@@ -69,7 +69,8 @@ parseIf :: Parser Node
 parseIf = do
     (tok, expr) <- parseIfOrdinary <|> parseIfDefined
     ifBody <- zeroOrMore parseDirective
-    elseC <- parseElse <|> parseElseIf
+    elseC <- optional $ parseElse <|> parseElseIf --todo, can have an arbitrary amount of elseifs, need to change elseClause to a [Node]
+    _ <- ofType TokEndif
     makeNode tok If { expression = expr, body = ifBody, elseClause = elseC }
     where
         parseIfOrdinary = do
@@ -81,18 +82,16 @@ parseIf = do
             name <- nameToSymbol
             return (tok, name)
 
-parseElse :: Parser (Maybe Node)
-parseElse = optional $ do
+parseElse :: Parser Node
+parseElse = do
     tok <- ofType TokElse
     elseBody <- zeroOrMore parseDirective
-    _ <- ofType TokEndif
     makeNode tok Else { body = elseBody }
 
-parseElseIf :: Parser (Maybe Node)
-parseElseIf = optional $ do
+parseElseIf :: Parser Node
+parseElseIf = do
     (tok, expr) <- parseElif <|> parseElifdef
     elseBody <- zeroOrMore parseDirective
-    _ <- ofType TokEndif
     makeNode tok ElseIf { expression = expr, body = elseBody }
     where
         parseElif = do

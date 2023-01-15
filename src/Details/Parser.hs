@@ -83,13 +83,12 @@ thenList :: Parser a -> Parser [a] -> Parser [a]
 thenList = then' (:)
 
 chainl1 :: Parser a -> Parser (a -> a -> a) -> Parser a
-p `chainl1` op = do
-  _1st <- p
-  rest <- many' $ do
-    f    <- op
-    term <- p
-    return (f, term)
-  return $ foldl (\x (f, y) -> f x y) _1st rest
+p `chainl1` op = p >>= rest
+  where
+    rest x = do {
+                f <- op;
+                y <- p;
+                rest (f x y) } <|> return x
 
 -- Accept a list of sequences forming an `a`, separated by sequences forming a `b`.
 separatedBy :: Parser a -> Parser b -> Parser [a]

@@ -30,8 +30,17 @@ spec =
             firstShouldMatchWith "#include <a.h>" (include ChevronInclude "a.h") "a chevron include whose path is \"a.h\""
             shouldError "#define"
             shouldError "#if"
+            shouldError "#ifdef 1\n#endif"
             defineBodyMatchWith "A" dummySymbol
-            defineBodyMatchWith "B + C" dummyNode { contents = BinaryOp { left = dummySymbol, right = dummySymbol , binaryOpType = BPlus } }
+            let addition x y = dummyNode { contents = BinaryOp { left = x, right = y, binaryOpType = BPlus } }
+                multiplication x y = dummyNode { contents = BinaryOp { left = x, right = y, binaryOpType = Multiply} }
+            defineBodyMatchWith "B+C" (addition dummySymbol dummySymbol)
+            defineBodyMatchWith "A+B*C" (multiplication (addition dummySymbol dummySymbol) dummySymbol)
+            let symbolBitNot = dummyNode { contents = UnaryOp { operand = dummySymbol, unaryOpType = BitNot } }
+            defineBodyMatchWith "~A" symbolBitNot
+            defineBodyMatchWith "~A+A" (addition symbolBitNot dummySymbol)
+            shouldAllMatchWith "#ifdef A\n#endif" [dummyNode { contents = If { expression = dummySymbol, body = [], elseClause = Nothing } }]
+            shouldAllMatchWith "#if 1\n#endif" [dummyNode { contents = If { expression = dummyInt 1, body = [], elseClause = Nothing } }]
 
 main :: IO ()
 main = hspec spec
@@ -126,6 +135,9 @@ include form path node = case contents node of
 
 makeBinOfType :: BinaryOpType -> NodeContents
 makeBinOfType t = BinaryOp { left = dummyNode, right = dummyNode, binaryOpType = t }
+
+dummyInt :: Integer -> Node
+dummyInt i = Node (Token TokLiteral (show i) (Just $ PPInt i) (TextCursor 0 0) False) Literal
 
 dummySymbol :: Node
 dummySymbol = dummyNode { contents = Symbol }
