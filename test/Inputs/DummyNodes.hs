@@ -64,6 +64,9 @@ unOpOfType t = dummyNode { contents = UnaryOp { operand = dummySymbol, unaryOpTy
 dummyInt :: Node
 dummyInt = Node (Token TokLiteral "0" (Just $ PPInt 0) (TextCursor 0 0) False) Literal
 
+dummyDefined :: Node
+dummyDefined = dummyFunc [dummySymbol]
+
 dummyFunc :: [Node] -> Node
 dummyFunc ns = dummyNode { contents = FuncLikeApplication { operands = ns } }
 

@@ -6,13 +6,13 @@ import Token
 import Data.Maybe (maybeToList)
 
 parseDirective :: Parser Node
-parseDirective = parseDefine <|> parseInclude <|> parseIf <|> parseUndef <|> oops "Ran out of parsers "
+parseDirective = parseDefine <|> parseInclude <|> parseIf <|> parseUndef <|> oops "Ran out of parsers"
 
 parseDefine :: Parser Node
 parseDefine = do
     tok <- tdefine
     name <- nameToSymbol
-    parameters <- optional parseFuncParams
+    parameters <- optional (parseFuncLike nameToSymbol)
     defineBody <- parseDefineBody
     makeNode tok Define { symbol = name, params = parameters, defineContents = defineBody }
 
@@ -30,12 +30,12 @@ parseAtomicExpr :: Parser Node
 parseAtomicExpr = parseUnaryOp <|> parseSimpleExpr
 
 parseSimpleExpr :: Parser Node
-parseSimpleExpr = parseInt <|> nameToSymbol <|> parseFuncApplication <|> betweenParens parseExpr
+parseSimpleExpr = parseInt <|> parseFuncApplication <|> nameToSymbol <|> betweenParens parseExpr
 
 parseFuncApplication :: Parser Node
 parseFuncApplication = do
     tok <- ofType TokName
-    ops <- parseFuncParams
+    ops <- parseFuncLike parseExpr
     makeNode tok FuncLikeApplication { operands = ops }
 
 parseUnaryOp :: Parser Node
@@ -137,9 +137,9 @@ parseUndef = do
     s <- nameToSymbol
     makeNode tok Undef { symbol = s }
 
-parseFuncParams :: Parser [Node]
-parseFuncParams = validateWithThen noSpaceBefore ps
-    where ps = betweenParens $ (nameToSymbol `separatedBy` tcomma) <|> result []
+parseFuncLike :: Parser Node -> Parser [Node]
+parseFuncLike p = validateWithThen noSpaceBefore ps
+    where ps = betweenParens $ (p `separatedBy` tcomma) <|> result []
 
 
 ofType :: TokenType -> Parser Token
