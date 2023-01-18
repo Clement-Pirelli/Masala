@@ -76,9 +76,16 @@ test-suite Masala-test
   other-modules:
       CursoredStringSpec
       DebugUtils
+      Inputs.CommentInputs
+      Inputs.DefineInput
+      Inputs.DummyNodes
+      Inputs.Framework
+      Inputs.IfInput
+      Inputs.IncludeInput
+      Inputs.LongInput
+      Inputs.ShortInput
       Numbers.ScannerSpec
       ParserSpec
-      SpecUtils
       Strings.ScannerSpec
       TestInputs
       TokeniserSpec

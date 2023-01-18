@@ -10,7 +10,7 @@ import CursoredString (newCursoredString)
 import Data.Maybe (catMaybes)
 import TestInputs
 import DebugUtils
-import SpecUtils
+import Inputs.Framework
 import Control.Monad.State.Lazy
 
 spec :: Spec

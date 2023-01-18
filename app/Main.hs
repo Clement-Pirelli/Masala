@@ -7,10 +7,18 @@ import Text.Pretty.Simple(pPrint)
 
 main :: IO ()
 main = do
-    let nodes = (parseTokens . scanTokens) "#define A B+C"
+    let nodes = (parseTokens . scanTokens) simpleDefineInput
     pPrint nodes
 
 
+simpleDefineInput :: String
+simpleDefineInput = 
+       "#define X A+B\n" 
+    ++ "#define Y A+B*C\n"
+    ++ "#define Z ~A\n"
+    ++ "#define W ~A+B\n"
+    ++ "#define V1(a) -a\n"
+    ++ "#define V2 (a) -a"
 
 tokeniserInput :: String
 tokeniserInput = 

@@ -1,8 +1,12 @@
-module SpecUtils where
+module Inputs.Framework where
 
 import Test.Hspec
 import Data.Foldable(traverse_)
 import Data.Tuple(uncurry)
+import Node
+import TokenType
+
+data TestInput = TestInput { title :: String, input :: String, expectedString :: String, expectedTypes :: [TokenType], expectedNodes :: [Node] }
 
 testAll :: (a -> SpecWith c) -> [a] -> SpecWith c
 testAll = traverse_

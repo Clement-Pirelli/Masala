@@ -3,13 +3,14 @@ module CursoredStringSpec where
 import Test.Hspec
 import CursoredString
 import TestInputs
-import SpecUtils
+import Inputs.Framework
 
 spec :: Spec
 spec =
     describe "CursoredString" $ do
         describe "asScannableString" $ do
             let scannableStringTestMapping i = (input i, expectedString i)
+                scannableStringTestInput = map scannableStringTestMapping (filter (\i -> input i == expectedString i) inputs)
             testAll2 scannableStringTest $ [
                 ("#def\\\r\nine A", "#define A"),
                 ("#def\\\t\t\r\nine B", "#define B"),
@@ -17,7 +18,7 @@ spec =
                 ("//#define A\r\n#define B", "#define B"),
                 ("#define A/*\r\n#define B*/", "#define A"),
                 ("Hello/*Bwabwa*/ World", "Hello World"),
-                ("Hello//Bwabwa\n World", "Hello World")] ++ map scannableStringTestMapping inputs
+                ("Hello//Bwabwa\n World", "Hello World")] ++ scannableStringTestInput
         describe "advanceChars" $ do
             testAll3 advanceCharsTest [
                 ("Hello World", 1, "ello World"), 
