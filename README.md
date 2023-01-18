@@ -5,8 +5,9 @@ Masala is a work in progress C preprocessor lexing/parsing/transformation librar
 ## Feature set (WIP)
 
 Simple interface for
-- scanning preprocessor tokens, which also tokenizes C++ in a decent way
-- parsing and evaluating preprocessor directives
+- scanning and parsing preprocessor directives
+- evaluating preprocessor expressions
 - modifying preprocessor directives programmatically
+- writing back the modified directives with style-preservation
 
-Currently, only the first one is implemented, and doesn't handle floating point/character literals properly, nor does it handle most escape sequences properly. Baby steps!
+Currently, only the first bullet point is implemented, but scanning doesn't handle floating point/character literals properly, nor does it handle most escape sequences properly. Baby steps!
