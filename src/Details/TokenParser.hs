@@ -3,21 +3,18 @@ module Details.TokenParser where
 import Details.Parser
 import Node
 import Token
+import Data.Maybe (maybeToList)
 
 parseDirective :: Parser Node
-parseDirective = parseDefine <|> parseInclude <|> parseIf <|> oops "Ran out of parsers "
+parseDirective = parseDefine <|> parseInclude <|> parseIf <|> parseUndef <|> oops "Ran out of parsers "
 
 parseDefine :: Parser Node
 parseDefine = do
-            tok <- tdefine
-            name <- nameToSymbol
-            (noSpace, parameters) <- optional noSpaceBefore `and'` funcLike
-            defineBody <- parseDefineBody
-            let nodeParameters = noSpace >> parameters
-            makeNode tok Define { symbol = name, params = nodeParameters, defineContents = defineBody }
-            where
-                funcLike = optional $ betweenParens funcParams
-                funcParams = (nameToSymbol `separatedBy` tcomma) <|> result []
+    tok <- tdefine
+    name <- nameToSymbol
+    parameters <- optional parseFuncParams
+    defineBody <- parseDefineBody
+    makeNode tok Define { symbol = name, params = parameters, defineContents = defineBody }
 
 parseDefineBody :: Parser (Either [Token] Node)
 parseDefineBody = do
@@ -33,7 +30,13 @@ parseAtomicExpr :: Parser Node
 parseAtomicExpr = parseUnaryOp <|> parseSimpleExpr
 
 parseSimpleExpr :: Parser Node
-parseSimpleExpr = parseInt <|> nameToSymbol <|> betweenParens parseExpr
+parseSimpleExpr = parseInt <|> nameToSymbol <|> parseFuncApplication <|> betweenParens parseExpr
+
+parseFuncApplication :: Parser Node
+parseFuncApplication = do
+    tok <- ofType TokName
+    ops <- parseFuncParams
+    makeNode tok FuncLikeApplication { operands = ops }
 
 parseUnaryOp :: Parser Node
 parseUnaryOp = do
@@ -69,9 +72,10 @@ parseIf :: Parser Node
 parseIf = do
     (tok, expr) <- parseIfOrdinary <|> parseIfDefined
     ifBody <- zeroOrMore parseDirective
-    elseC <- optional $ parseElse <|> parseElseIf --todo, can have an arbitrary amount of elseifs, need to change elseClause to a [Node]
+    elseIfs <- zeroOrMore parseElseIf
+    elseC <- optional parseElse
     _ <- ofType TokEndif
-    makeNode tok If { expression = expr, body = ifBody, elseClause = elseC }
+    makeNode tok If { expression = expr, body = ifBody, elseClauses = elseIfs ++ maybeToList elseC }
     where
         parseIfOrdinary = do
             tok <- ofType TokIf
@@ -127,14 +131,20 @@ includeChevronString = do
     let asString = lexeme tok
     return $ Include { path = asString, form = ChevronInclude }
 
+parseUndef :: Parser Node
+parseUndef = do
+    tok <- ofType TokUndef
+    s <- nameToSymbol
+    makeNode tok Undef { symbol = s }
+
+parseFuncParams :: Parser [Node]
+parseFuncParams = validateWithThen noSpaceBefore ps
+    where ps = betweenParens $ (nameToSymbol `separatedBy` tcomma) <|> result []
+
+
 ofType :: TokenType -> Parser Token
 ofType t = satisfy err ((== t) . tokenType)
     where err = "Unexpected token while trying to match token of type " ++ show t
-
---todo: use or remove this
---notOfType :: TokenType -> Parser Token
---notOfType t = exclude err ((== t) . tokenType)
---    where err = "Unexpected token while trying to avoid tokens of type " ++ show t
 
 noSpaceBefore :: Parser Token
 noSpaceBefore = exclude "Expected no space before token" Token.preceededBySpace

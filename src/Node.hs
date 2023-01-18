@@ -10,7 +10,7 @@ data NodeContents =
       UnaryOp { operand :: Node, unaryOpType :: UnaryOpType } 
     | BinaryOp { left :: Node, right :: Node, binaryOpType :: BinaryOpType}
     | FuncLikeApplication { operands :: [Node] }
-    | If { expression :: Node, body :: [Node], elseClause :: Maybe Node }
+    | If { expression :: Node, body :: [Node], elseClauses :: [Node] }
     | ElseIf { expression :: Node, body :: [Node] }
     | Else { body :: [Node] }
     | Include { path :: String, form :: IncludeForm }
