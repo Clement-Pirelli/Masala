@@ -94,7 +94,7 @@ p `chainl1` op = p >>= rest
 separatedBy :: Parser a -> Parser b -> Parser [a]
 parser `separatedBy` separator = do
     x <- parser
-    xs <- many' (separator >> parser)
+    xs <- zeroOrMore (separator >> parser)
     return (x : xs)
 
 surroundedBy :: Parser a -> Parser b -> Parser c -> Parser b
